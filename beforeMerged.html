@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoundMaster | 음향기기 통합 관리 시스템</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Pretendard:wght@100;400;700&family=Outfit:wght@300;600;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo-icon">
+                    <i class="fas fa-wave-square"></i>
+                </div>
+                <span class="logo-text">SoundMaster</span>
+            </div>
+
+            <nav class="nav-menu">
+                <a class="nav-item active" onclick="showSection('dashboard', this)">
+                    <i class="fas fa-th-large"></i>
+                    <span>대시보드</span>
+                </a>
+                <a class="nav-item" onclick="showSection('inventory', this)">
+                    <i class="fas fa-list"></i>
+                    <span>장비 목록</span>
+                </a>
+                <a class="nav-item" onclick="openFormModal()">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>장비 등록</span>
+                </a>
+                <a class="nav-item" onclick="showSection('stats', this)">
+                    <i class="fas fa-chart-line"></i>
+                    <span>운용 통계</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="avatar">AD</div>
+                    <div class="user-info">
+                        <span class="name">관리자</span>
+                        <span class="role">System Admin</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="gearSearch" placeholder="장비명, 시리얼 번호, 카테고리 검색..."
+                        onkeyup="filterInventory()">
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">3</span>
+                    </button>
+                    <button class="primary-btn" onclick="openFormModal()" style="cursor:pointer;">
+                        <i class="fas fa-plus"></i>&nbsp;새 장비 등록
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard Section -->
+            <section id="dashboard-section" class="content-section">
+                <div class="section-header">
+                    <h1>실시간 현황</h1>
+                    <p class="subtitle">전체 음향 장비의 운용 상태를 한눈에 파악하세요.</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="stat-data">
+                            <span class="label">총 보유 장비</span>
+                            <h3 id="total-count">0</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-data">
+                            <span class="label">가용 가능</span>
+                            <h3 id="available-count">0</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-data">
+                            <span class="label">대여 중</span>
+                            <h3 id="in-use-count">0</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon red">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <div class="stat-data">
+                            <span class="label">수리/점검</span>
+                            <h3 id="repair-count">0</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="card wide">
+                        <div class="card-header">
+                            <h3>최근 등록된 장비</h3>
+                            <button class="text-btn" onclick="showSection('inventory')">전체보기 <i
+                                    class="fas fa-arrow-right"></i></button>
+                        </div>
+                        <div class="table-container">
+                            <table id="recent-table">
+                                <thead>
+                                    <tr>
+                                        <th>장비명</th>
+                                        <th>카테고리</th>
+                                        <th>상태</th>
+                                        <th>등록일</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>카테고리 현황</h3>
+                        </div>
+                        <div class="chart-container" style="position: relative; height:200px; width:100%">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>부서별 대여 현황</h3>
+                        </div>
+                        <div class="chart-container" style="position: relative; height:200px; width:100%">
+                            <canvas id="departmentChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Inventory Section -->
+            <section id="inventory-section" class="content-section" style="display: none;">
+                <div class="section-header">
+                    <div class="header-with-filter">
+                        <div>
+                            <h1>장비 인벤토리</h1>
+                            <p class="subtitle">모든 장비의 상세 정보 및 이력을 관리합니다.</p>
+                        </div>
+                        <div class="filter-group">
+                            <select id="locationFilter" onchange="filterInventory()">
+                                <option value="all">모든 장소</option>
+                            </select>
+                            <select id="departmentFilter" onchange="filterInventory()">
+                                <option value="all">모든 부서</option>
+                            </select>
+                            <select id="categoryFilter" onchange="filterInventory()">
+                                <option value="all">모든 카테고리</option>
+                                <option value="Speaker">스피커</option>
+                                <option value="Microphone">마이크</option>
+                                <option value="Mixer">믹서</option>
+                                <option value="Cable">케이블</option>
+                                <option value="Other">기타</option>
+                            </select>
+                            <select id="statusFilter" onchange="filterInventory()">
+                                <option value="all">모든 상태</option>
+                                <option value="가용">가용</option>
+                                <option value="대여중">대여중</option>
+                                <option value="수리중">수리중</option>
+                                <option value="분실">분실</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="inventory-grid" id="inventory-list">
+                    <!-- Cards will be generated here -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notification" class="notification"></div>
+
+    <!-- Modal for Gear Details -->
+    <div id="gearModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">장비 상세 정보</h2>
+                <button class="close-btn" onclick="closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Modal content goes here -->
+            </div>
+            <div class="modal-footer">
+                <button class="secondary-btn" onclick="closeModal()">닫기</button>
+                <button class="primary-btn" id="modalEditBtn" onclick="" style="cursor:pointer; color:white;">상태
+                    변경하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Internal Form Iframe -->
+    <div id="formModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 900px; height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2 id="formModalTitle">장비 등록 / 수정</h2>
+                <button class="close-btn" onclick="closeFormModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="flex-grow: 1; padding: 0;">
+                <iframe id="formIframe" src=""
+                    style="width: 100%; height: 100%; border: none; border-radius: 0 0 var(--radius) var(--radius);"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
