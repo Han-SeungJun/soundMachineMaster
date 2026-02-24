@@ -701,6 +701,195 @@
     .secondary-btn:hover {
         background: #f1f5f9;
     }
+
+    .danger-btn {
+        background: var(--accent-red);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .danger-btn:hover {
+        background: #dc2626;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+
+    /* Mobile Responsive Styles */
+    @media screen and (max-width: 768px) {
+        .app-container {
+            flex-direction: column;
+            padding-bottom: 70px;
+        }
+
+        .sidebar {
+            width: 100%;
+            height: auto;
+            position: relative;
+            padding: 16px;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .logo-container {
+            padding-bottom: 0;
+        }
+
+        .logo-text {
+            font-size: 18px;
+        }
+
+        .sidebar-footer {
+            display: none;
+        }
+
+        .nav-menu {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: var(--sidebar-bg);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 1000;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 0;
+        }
+
+        .nav-item {
+            flex-direction: column;
+            padding: 8px;
+            margin-bottom: 0;
+            gap: 6px;
+            border-radius: 8px;
+            font-size: 11px;
+        }
+
+        .nav-item i {
+            font-size: 20px;
+            width: auto;
+            margin: 0;
+        }
+
+        .nav-item span {
+            font-size: 11px;
+        }
+
+        .main-content {
+            margin-left: 0;
+            padding: 16px;
+        }
+
+        .top-bar {
+            flex-direction: column;
+            gap: 16px;
+            align-items: stretch;
+            margin-bottom: 24px;
+        }
+
+        .search-box {
+            width: 100%;
+        }
+
+        .header-actions {
+            justify-content: flex-end;
+        }
+
+        .section-header h1 {
+            font-size: 24px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .stat-card {
+            padding: 16px;
+            flex-direction: column;
+            text-align: center;
+            gap: 12px;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+        }
+
+        .stat-data h3 {
+            font-size: 20px;
+        }
+
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .inventory-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .header-with-filter {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .filter-group {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .filter-group select {
+            width: 100%;
+        }
+
+        .modal-content {
+            width: 95%;
+            margin: 0 10px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-detail-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+        }
+
+        .modal-footer {
+            flex-direction: column;
+        }
+
+        .modal-footer button,
+        .modal-footer a {
+            width: 100%;
+            text-align: center;
+            justify-content: center;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        td,
+        th {
+            white-space: nowrap;
+        }
+    }
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link
@@ -914,6 +1103,7 @@
                 <!-- Modal content goes here -->
             </div>
             <div class="modal-footer">
+                <button class="danger-btn" id="modalDeleteBtn" onclick="deleteItem()">삭제</button>
                 <button class="secondary-btn" onclick="closeModal()">닫기</button>
                 <a class="primary-btn" id="modalEditBtn" target="_blank"
                     style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; color:white;">상태
@@ -954,6 +1144,8 @@
         { id: 4, name: "Sennheiser EW-D", category: "Microphone", status: "수리중", serial: "SN-44510", location: "수리실", date: "2024-02-20", user: "박민수", purpose: "마이크 교체", department: "관리팀", icon: "fa-microphone-lines" },
         { id: 5, name: "QSC K12.2", category: "Speaker", status: "가용", serial: "QS-77310", location: "2층 웨일즈성전", date: "2024-01-20", user: "정소라", purpose: "찬양연습", department: "청년부", icon: "fa-volume-high" }
     ];
+
+    let currentSelectedId = null;
 
     document.addEventListener('DOMContentLoaded', () => {
         initDropdowns();
@@ -1169,6 +1361,7 @@
     }
 
     function openModal(id) {
+        currentSelectedId = id;
         const item = inventoryData.find(i => i.id === id);
         if (!item) return;
 
@@ -1228,6 +1421,34 @@
 
     function closeModal() {
         document.getElementById('gearModal').classList.remove('active');
+    }
+
+    async function hashPassword(password) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function deleteItem() {
+        if (!currentSelectedId) return;
+        const password = prompt("장비를 삭제하려면 비밀번호를 입력하세요:");
+        if (!password) return;
+
+        const hashed = await hashPassword(password);
+        const targetHash = "daa35e4f1a0e43def76e13a948cbda05be2569901fa0c6d5d6342fb2bdc85028";
+
+        if (hashed === targetHash) {
+            inventoryData = inventoryData.filter(i => i.id !== currentSelectedId);
+            filterInventory();
+            updateStats();
+            initDashboard();
+            closeModal();
+            showNotification('장비가 삭제되었습니다.');
+        } else {
+            alert("비밀번호가 일치하지 않습니다.");
+        }
     }
 
     function showNotification(msg) {

@@ -697,3 +697,192 @@ td {
 .secondary-btn:hover {
     background: #f1f5f9;
 }
+
+.danger-btn {
+    background: var(--accent-red);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.danger-btn:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Mobile Responsive Styles */
+@media screen and (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+        padding-bottom: 70px;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        padding: 16px;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 100;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .logo-container {
+        padding-bottom: 0;
+    }
+
+    .logo-text {
+        font-size: 18px;
+    }
+
+    .sidebar-footer {
+        display: none;
+    }
+
+    .nav-menu {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: var(--sidebar-bg);
+        display: flex;
+        justify-content: space-around;
+        padding: 10px 0;
+        z-index: 1000;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        margin: 0;
+    }
+
+    .nav-item {
+        flex-direction: column;
+        padding: 8px;
+        margin-bottom: 0;
+        gap: 6px;
+        border-radius: 8px;
+        font-size: 11px;
+    }
+
+    .nav-item i {
+        font-size: 20px;
+        width: auto;
+        margin: 0;
+    }
+
+    .nav-item span {
+        font-size: 11px;
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: 16px;
+    }
+
+    .top-bar {
+        flex-direction: column;
+        gap: 16px;
+        align-items: stretch;
+        margin-bottom: 24px;
+    }
+
+    .search-box {
+        width: 100%;
+    }
+
+    .header-actions {
+        justify-content: flex-end;
+    }
+
+    .section-header h1 {
+        font-size: 24px;
+    }
+
+    .subtitle {
+        font-size: 14px;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .stat-card {
+        padding: 16px;
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+
+    .stat-data h3 {
+        font-size: 20px;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .inventory-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .header-with-filter {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-group {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .filter-group select {
+        width: 100%;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 0 10px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-header h2 {
+        font-size: 18px;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+    }
+
+    .modal-footer button,
+    .modal-footer a {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+    }
+
+    .table-container {
+        overflow-x: auto;
+    }
+
+    td,
+    th {
+        white-space: nowrap;
+    }
+}
