@@ -211,6 +211,8 @@ function showSection(sectionId, element) {
 
     if (sectionId === 'inventory') {
         renderInventory();
+    } else if (sectionId === 'stats') {
+        initStats();
     } else {
         initDashboard();
     }
@@ -339,11 +341,101 @@ async function deleteItem() {
         filterInventory();
         updateStats();
         initDashboard();
+        if (document.getElementById('stats-section').style.display === 'block') initStats();
         closeModal();
         showNotification('장비가 삭제되었습니다.');
     } else {
         alert("비밀번호가 일치하지 않습니다.");
     }
+}
+
+let statusChartInstance = null;
+let deptPolarChartInstance = null;
+let locationBarChartInstance = null;
+
+function initStats() {
+    const statsSummaryGrid = document.getElementById('stats-summary-grid');
+
+    const locCounts = inventoryData.reduce((acc, i) => { acc[i.location] = (acc[i.location] || 0) + 1; return acc; }, {});
+    const topLoc = Object.keys(locCounts).sort((a, b) => locCounts[b] - locCounts[a])[0] || '-';
+
+    const depCounts = inventoryData.reduce((acc, i) => { acc[i.department] = (acc[i.department] || 0) + 1; return acc; }, {});
+    const topDep = Object.keys(depCounts).sort((a, b) => depCounts[b] - depCounts[a])[0] || '-';
+
+    const issueCount = inventoryData.filter(i => i.status === '수리중' || i.status === '분실').length;
+
+    statsSummaryGrid.innerHTML = `
+        <div class="stat-card">
+            <div class="stat-icon purple"><i class="fas fa-map-marker-alt"></i></div>
+            <div class="stat-data">
+                <span class="label">최다 보관 장소</span>
+                <h3 style="font-size:16px;">${topLoc}</h3>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+            <div class="stat-data">
+                <span class="label">최다 보유 부서</span>
+                <h3 style="font-size:16px;">${topDep}</h3>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon red"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="stat-data">
+                <span class="label">리스크 장비(수리/분실)</span>
+                <h3 style="font-size:22px;">${issueCount} <span style="font-size:14px">건</span></h3>
+            </div>
+        </div>
+    `;
+
+    const ctxStatus = document.getElementById('statusChart').getContext('2d');
+    const statusCounts = inventoryData.reduce((acc, i) => { acc[i.status] = (acc[i.status] || 0) + 1; return acc; }, {});
+    if (statusChartInstance) statusChartInstance.destroy();
+    statusChartInstance = new Chart(ctxStatus, {
+        type: 'pie',
+        data: {
+            labels: Object.keys(statusCounts),
+            datasets: [{
+                data: Object.values(statusCounts),
+                backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#64748b', '#6366f1'],
+                borderWidth: 0
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    const ctxDept = document.getElementById('deptPolarChart').getContext('2d');
+    if (deptPolarChartInstance) deptPolarChartInstance.destroy();
+    deptPolarChartInstance = new Chart(ctxDept, {
+        type: 'polarArea',
+        data: {
+            labels: Object.keys(depCounts),
+            datasets: [{
+                data: Object.values(depCounts),
+                backgroundColor: ['rgba(99,102,241,0.6)', 'rgba(59,130,246,0.6)', 'rgba(16,185,129,0.6)', 'rgba(245,158,11,0.6)', 'rgba(239,68,68,0.6)', 'rgba(168,85,247,0.6)'],
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    const ctxLoc = document.getElementById('locationBarChart').getContext('2d');
+    if (locationBarChartInstance) locationBarChartInstance.destroy();
+    locationBarChartInstance = new Chart(ctxLoc, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(locCounts),
+            datasets: [{
+                label: '보관 장비 수',
+                data: Object.values(locCounts),
+                backgroundColor: '#818cf8',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
+        }
+    });
 }
 
 function showNotification(msg) {

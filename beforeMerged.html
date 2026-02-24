@@ -201,6 +201,47 @@
                     <!-- Cards will be generated here -->
                 </div>
             </section>
+
+            <!-- Stats Section -->
+            <section id="stats-section" class="content-section" style="display: none;">
+                <div class="section-header">
+                    <h1>운용 통계</h1>
+                    <p class="subtitle">모든 장비의 데이터 기반 운용 결산 및 분석 현황입니다.</p>
+                </div>
+
+                <div class="stats-grid" id="stats-summary-grid">
+                    <!-- Dynamic Summary Cards -->
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>전체 장비 상태 비율</h3>
+                        </div>
+                        <div class="chart-container" style="position: relative; height:250px; width:100%">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>부서별 자산 분포</h3>
+                        </div>
+                        <div class="chart-container" style="position: relative; height:250px; width:100%">
+                            <canvas id="deptPolarChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card wide">
+                        <div class="card-header">
+                            <h3>장소별 장비 보관 현황</h3>
+                        </div>
+                        <div class="chart-container" style="position: relative; height:300px; width:100%">
+                            <canvas id="locationBarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
