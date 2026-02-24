@@ -947,9 +947,9 @@
                         onkeyup="filterInventory()">
                 </div>
                 <div class="header-actions">
-                    <button class="icon-btn">
+                    <button class="icon-btn" onclick="openHistoryModal()">
                         <i class="fas fa-bell"></i>
-                        <span class="badge">3</span>
+                        <span class="badge" id="history-badge">0</span>
                     </button>
                     <a class="primary-btn link-gear-register-btn" target="_blank"
                         style="text-decoration:none; display:inline-flex; align-items:center; cursor:pointer;">
@@ -1111,6 +1111,24 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal for History -->
+    <div id="historyModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>최근 등록/업데이트 히스토리</h2>
+                <button class="close-btn" onclick="closeHistoryModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+                <ul id="historyList" style="list-style: none; padding: 0; margin: 0;">
+                    <!-- History items go here -->
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button class="secondary-btn" onclick="closeHistoryModal()">닫기</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -1152,6 +1170,14 @@
         initDashboard();
         renderInventory();
         updateStats();
+
+        // Search Input Enter Key Event
+        document.getElementById('gearSearch').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                showSection('inventory', document.querySelectorAll('.nav-item')[1]);
+                filterInventory();
+            }
+        });
 
         // Data Loading from Google Sheets
         if (GOOGLE_SHEET_API && GOOGLE_SHEET_API.trim() !== "") {
@@ -1342,11 +1368,19 @@
     }
 
     function filterInventory() {
-        const searchTerm = document.getElementById('gearSearch').value.toLowerCase();
-        const catFilter = document.getElementById('categoryFilter').value;
-        const statFilter = document.getElementById('statusFilter').value;
-        const locFilter = document.getElementById('locationFilter').value;
-        const depFilter = document.getElementById('departmentFilter').value;
+        const searchInput = document.getElementById('gearSearch');
+        const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+        const catFilter = document.getElementById('categoryFilter') ? document.getElementById('categoryFilter').value : 'all';
+        const statFilter = document.getElementById('statusFilter') ? document.getElementById('statusFilter').value : 'all';
+        const locFilter = document.getElementById('locationFilter') ? document.getElementById('locationFilter').value : 'all';
+        const depFilter = document.getElementById('departmentFilter') ? document.getElementById('departmentFilter').value : 'all';
+
+        // Automatically switch to inventory view if typing in searchbox from dashboard
+        if (searchTerm.length > 0 && document.getElementById('inventory-section').style.display === 'none') {
+            showSection('inventory', document.querySelectorAll('.nav-item')[1]);
+            // Keep focus on search input
+            setTimeout(() => document.getElementById('gearSearch').focus(), 10);
+        }
 
         const filtered = inventoryData.filter(item => {
             const matchesSearch = item.name.toLowerCase().includes(searchTerm) || item.serial.toLowerCase().includes(searchTerm);
@@ -1421,6 +1455,37 @@
 
     function closeModal() {
         document.getElementById('gearModal').classList.remove('active');
+    }
+
+    function openHistoryModal() {
+        populateHistoryList();
+        document.getElementById('historyModal').classList.add('active');
+    }
+
+    function closeHistoryModal() {
+        document.getElementById('historyModal').classList.remove('active');
+    }
+
+    function populateHistoryList() {
+        const historyList = document.getElementById('historyList');
+        historyList.innerHTML = '';
+        const recentHistory = [...inventoryData].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
+
+        recentHistory.forEach(item => {
+            const li = document.createElement('li');
+            li.style.borderBottom = '1px solid #f1f5f9';
+            li.style.padding = '12px 0';
+            li.innerHTML = `
+                <div style="font-size: 14px; font-weight: 600; color: var(--text-main); margin-bottom: 4px;">${item.name} (${item.category})</div>
+                <div style="font-size: 13px; color: var(--text-muted); display: flex; justify-content: space-between;">
+                    <span>상태: <span style="color: var(--primary); font-weight: 600;">${item.status}</span></span>
+                    <span>${item.date}</span>
+                </div>
+            `;
+            historyList.appendChild(li);
+        });
+
+        document.getElementById('history-badge').innerText = inventoryData.length > 0 ? inventoryData.length : '0';
     }
 
     async function hashPassword(password) {
@@ -1526,6 +1591,7 @@
                 renderInventory();
                 updateStats();
                 initDashboard();
+                populateHistoryList(); // Initialize history badge
                 showNotification('실시간 데이터가 성공적으로 동기화되었습니다.');
             } else {
                 console.warn('Parsed data is empty.');

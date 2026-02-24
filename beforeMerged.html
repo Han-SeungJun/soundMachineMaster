@@ -63,9 +63,9 @@
                         onkeyup="filterInventory()">
                 </div>
                 <div class="header-actions">
-                    <button class="icon-btn">
+                    <button class="icon-btn" onclick="openHistoryModal()">
                         <i class="fas fa-bell"></i>
-                        <span class="badge">3</span>
+                        <span class="badge" id="history-badge">0</span>
                     </button>
                     <button class="primary-btn" onclick="openFormModal()" style="cursor:pointer;">
                         <i class="fas fa-plus"></i>&nbsp;새 장비 등록
@@ -222,6 +222,24 @@
                 <button class="secondary-btn" onclick="closeModal()">닫기</button>
                 <button class="primary-btn" id="modalEditBtn" onclick="" style="cursor:pointer; color:white;">상태
                     변경하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for History -->
+    <div id="historyModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>최근 등록/업데이트 히스토리</h2>
+                <button class="close-btn" onclick="closeHistoryModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+                <ul id="historyList" style="list-style: none; padding: 0; margin: 0;">
+                    <!-- History items go here -->
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button class="secondary-btn" onclick="closeHistoryModal()">닫기</button>
             </div>
         </div>
     </div>
