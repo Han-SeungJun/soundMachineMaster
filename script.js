@@ -29,6 +29,8 @@ let inventoryData = [
     { id: 5, name: "QSC K12.2", category: "Speaker", status: "가용", serial: "QS-77310", location: "2층 웨일즈성전", date: "2024-01-20", user: "정소라", purpose: "찬양연습", department: "청년부", icon: "fa-volume-high" }
 ];
 
+let currentSelectedId = null;
+
 document.addEventListener('DOMContentLoaded', () => {
     initDropdowns();
     initDashboard();
@@ -234,6 +236,7 @@ function filterInventory() {
 }
 
 function openModal(id) {
+    currentSelectedId = id;
     const item = inventoryData.find(i => i.id === id);
     if (!item) return;
 
@@ -313,6 +316,34 @@ function closeFormModal() {
 
 function closeModal() {
     document.getElementById('gearModal').classList.remove('active');
+}
+
+async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function deleteItem() {
+    if (!currentSelectedId) return;
+    const password = prompt("장비를 삭제하려면 비밀번호를 입력하세요:");
+    if (!password) return;
+
+    const hashed = await hashPassword(password);
+    const targetHash = "daa35e4f1a0e43def76e13a948cbda05be2569901fa0c6d5d6342fb2bdc85028";
+
+    if (hashed === targetHash) {
+        inventoryData = inventoryData.filter(i => i.id !== currentSelectedId);
+        filterInventory();
+        updateStats();
+        initDashboard();
+        closeModal();
+        showNotification('장비가 삭제되었습니다.');
+    } else {
+        alert("비밀번호가 일치하지 않습니다.");
+    }
 }
 
 function showNotification(msg) {
