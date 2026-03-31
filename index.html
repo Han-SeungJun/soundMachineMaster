@@ -1933,6 +1933,9 @@
     const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeAbW1PX3Cg9oNc3kn0p0HLTkfDDg0C1QEGHOqxbQ25Zo69Rw/viewform?usp=sharing&ouid=106361419293264327468";
     const GOOGLE_SHEET_API = "https://docs.google.com/spreadsheets/d/1AWw7zH5PAGLLMgpQ5WfSN4-R7Cr2E2VeFxstQoxAU1k/gviz/tq?tqx=out:json&gid=432772852";
     const GOOGLE_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzFn_aWZmXa9Yjtx4YxXTteFtkgMndXE087en-cTfWE8CSDPPPQ0nyeLQnuATJIEA43aQ/exec";
+    // Notes 시트 읽기용 gviz/tq URL (CORS 없음, 인벤토리와 동일 방식)
+    const _SID = (GOOGLE_SHEET_API.match(/spreadsheets\/d\/([^\/]+)/) || [])[1] || '';
+    const NOTES_SHEET_URL = _SID ? `https://docs.google.com/spreadsheets/d/${_SID}/gviz/tq?tqx=out:json&sheet=Notes` : '';
 
     const LOCATIONS = [
         "지하 1층 리바이벌 성전", "1층 유치부실", "1층 다윗의 장막",
@@ -1948,6 +1951,8 @@
     let currentView = 'grid'; // 'grid' | 'list'
     let currentStatusPill = 'all';
     let localPhotoDataUrls = [];
+    let pendingNotes = {};    // { [itemId]: [note,...] } — 저장 후 gviz 캐시 반영 전 임시 보관
+    let deletedNoteIds = new Set(); // 삭제 후 gviz 캐시 반영 전 임시 보관
     let categoryChartInstance = null;
     let departmentChartInstance = null;
     let statusChartInstance = null;
@@ -2400,15 +2405,17 @@
         saveBtn.disabled = true;
 
         try {
-            await fetch(GOOGLE_WEBAPP_URL, {
+            const saveResp = await fetch(GOOGLE_WEBAPP_URL, {
                 method: 'POST',
-                mode: 'no-cors',
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({ action: 'addNote', note: note })
             });
+            if (!saveResp.ok) throw new Error('서버 오류: ' + saveResp.status);
+            const saveResult = await saveResp.json();
+            if (saveResult && saveResult.error) throw new Error(saveResult.error);
         } catch (e) {
             console.error('Sheet save failed:', e);
-            showNotification('저장에 실패했습니다.', 'error');
+            showNotification('저장 실패: ' + e.message, 'error');
             saveBtn.innerHTML = originalHtml;
             saveBtn.disabled = false;
             return;
@@ -2431,10 +2438,20 @@
         document.getElementById('localMemoInput').value = '';
         document.getElementById('localPhotoInput').value = '';
         document.getElementById('localPhotoPreview').innerHTML = '';
+
+        // pendingNotes에 등록 (gviz 캐시 반영 전 즉시 표시용)
+        const pendingNote = {
+            itemId: note.itemId, id: note.id,
+            status: note.status || '',
+            memo: note.memo || '',
+            photos: note.photos.map(p => p.data || p), // 미리보기용 data URL
+            date: note.date
+        };
+        if (!pendingNotes[currentSelectedId]) pendingNotes[currentSelectedId] = [];
+        pendingNotes[currentSelectedId].push(pendingNote);
+
         localPhotoDataUrls = [];
         showNotification('기록이 저장되었습니다.', 'success');
-        // GAS가 시트에 반영할 시간을 확보한 뒤 목록 갱신
-        await new Promise(r => setTimeout(r, 1500));
         await renderNotes(currentSelectedId);
     }
 
@@ -2451,19 +2468,23 @@
         if (!confirm('정말로 이 기록을 삭제할까요?')) return;
 
         try {
-            await fetch(GOOGLE_WEBAPP_URL, {
+            const delResp = await fetch(GOOGLE_WEBAPP_URL, {
                 method: 'POST',
-                mode: 'no-cors',
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({ action: 'deleteNote', itemId: itemId, noteId: noteId })
             });
+            if (!delResp.ok) throw new Error('서버 오류: ' + delResp.status);
+            const delResult = await delResp.json();
+            if (delResult && delResult.error) throw new Error(delResult.error);
         } catch (e) {
             console.error('Sheet delete failed:', e);
-            showNotification('삭제에 실패했습니다.', 'error');
+            showNotification('삭제 실패: ' + e.message, 'error');
             return;
         }
 
-        await new Promise(r => setTimeout(r, 1500));
+        // 즉시 UI에서 제거 (gviz 캐시 반영 전)
+        deletedNoteIds.add(String(noteId));
+        if (pendingNotes[itemId]) pendingNotes[itemId] = pendingNotes[itemId].filter(n => String(n.id) !== String(noteId));
         await renderNotes(itemId);
         renderInventory();
     }
@@ -2472,18 +2493,37 @@
         const area = document.getElementById('notesHistoryArea');
         if (!area) return;
 
-        let notes = [];
-        try {
-            const res = await fetch(`${GOOGLE_WEBAPP_URL}?action=getNotes&itemId=${id}`);
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            const data = await res.json();
-            if (data && data.error) throw new Error(data.error);
-            notes = Array.isArray(data) ? data : [];
-        } catch (e) {
-            console.error('Notes fetch failed:', e);
-            area.innerHTML = `<div style="color:#ef4444;font-size:13px;padding:8px 0;"><i class="fas fa-triangle-exclamation"></i> 기록을 불러오지 못했습니다.<br><span style="font-size:11px;opacity:.7;">${escapeHtml(e.message)}</span></div>`;
-            return;
+        // 1. gviz/tq로 Notes 시트 읽기 (CORS 없음)
+        let sheetNotes = [];
+        if (NOTES_SHEET_URL) {
+            try {
+                const res = await fetch(NOTES_SHEET_URL);
+                const text = await res.text();
+                const m = text.match(/google\.visualization\.Query\.setResponse\(([\s\S\w]+)\);?/);
+                if (m) {
+                    const json = JSON.parse(m[1]);
+                    if (json.status !== 'error' && json.table && json.table.rows) {
+                        sheetNotes = json.table.rows.map(row => ({
+                            itemId: row.c[0] ? row.c[0].v : null,
+                            id: row.c[1] ? row.c[1].v : null,
+                            status: row.c[2] ? (row.c[2].v || '') : '',
+                            memo: row.c[3] ? (row.c[3].v || '') : '',
+                            photos: (() => { try { return JSON.parse(row.c[4] && row.c[4].v ? row.c[4].v : '[]'); } catch { return []; } })(),
+                            date: row.c[5] ? (row.c[5].f || String(row.c[5].v) || '') : ''
+                        })).filter(n => n.itemId != null && String(n.itemId) === String(id));
+                    }
+                }
+            } catch (e) { console.warn('Notes gviz fetch failed:', e); }
         }
+
+        // 2. 삭제된 항목 필터링 (아직 gviz 캐시에서 제거 안 됐을 수 있음)
+        sheetNotes = sheetNotes.filter(n => !deletedNoteIds.has(String(n.id)));
+
+        // 3. pending 노트 병합 (저장 후 gviz 캐시 반영 전 즉시 표시)
+        const pending = (pendingNotes[id] || []).filter(
+            pn => !sheetNotes.some(sn => String(sn.id) === String(pn.id)) && !deletedNoteIds.has(String(pn.id))
+        );
+        const notes = [...sheetNotes, ...pending];
 
         // 뱃지 카운트 캐시 갱신
         localStorage.setItem(`noteCount_${id}`, notes.length);
