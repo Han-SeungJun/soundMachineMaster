@@ -20,14 +20,7 @@ const LOCATIONS = [
 
 const DEPARTMENTS = ["예배팀", "방송팀", "유치부", "중고등부", "청년부", "사사모 영상팀", "본팀 음향팀"];
 
-// Dummy Data for Preview (Updated with new fields)
-let inventoryData = [
-    { id: 1, name: "JBL SRX815P", category: "Speaker", status: "가용", location: "지하 1층 리바이벌 성전", date: "2024-01-15", user: "홍길동", purpose: "정기예배", department: "예배팀", icon: "fa-volume-high" },
-    { id: 2, name: "Shure SM58", category: "Microphone", status: "대여중", location: "1층 유치부실", date: "2024-02-10", user: "김철수", purpose: "공지사항", department: "유치부", icon: "fa-microphone" },
-    { id: 3, name: "Yamaha CL5", category: "Mixer", status: "가용", location: "3층 본당", date: "2023-11-05", user: "이영희", purpose: "메인예배", department: "방송팀", icon: "fa-sliders" },
-    { id: 4, name: "Sennheiser EW-D", category: "Microphone", status: "수리중", location: "수리실", date: "2024-02-20", user: "박민수", purpose: "마이크 교체", department: "관리팀", icon: "fa-microphone-lines" },
-    { id: 5, name: "QSC K12.2", category: "Speaker", status: "가용", location: "2층 웨일즈성전", date: "2024-01-20", user: "정소라", purpose: "찬양연습", department: "청년부", icon: "fa-volume-high" }
-];
+let inventoryData = [];
 
 let currentSelectedId = null;
 
