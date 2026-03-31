@@ -122,24 +122,28 @@ function addNoteToSheet(note) {
   const driveUrls = [];
 
   if (note.photos && note.photos.length > 0) {
-    const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
-    note.photos.forEach(function(photo) {
-      try {
-        const matches = photo.data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-        if (!matches) return;
-        const mimeType = matches[1];
-        const blob = Utilities.newBlob(
-          Utilities.base64Decode(matches[2]),
-          mimeType,
-          photo.name || ('photo_' + Date.now() + '.jpg')
-        );
-        const file = folder.createFile(blob);
-        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-        driveUrls.push('https://drive.google.com/uc?export=view&id=' + file.getId());
-      } catch (err) {
-        Logger.log('Photo upload error: ' + err.toString());
-      }
-    });
+    try {
+      const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
+      note.photos.forEach(function(photo) {
+        try {
+          const matches = photo.data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+          if (!matches) return;
+          const mimeType = matches[1];
+          const blob = Utilities.newBlob(
+            Utilities.base64Decode(matches[2]),
+            mimeType,
+            photo.name || ('photo_' + Date.now() + '.jpg')
+          );
+          const file = folder.createFile(blob);
+          file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+          driveUrls.push('https://drive.google.com/uc?export=view&id=' + file.getId());
+        } catch (err) {
+          Logger.log('Photo upload error: ' + err.toString());
+        }
+      });
+    } catch (err) {
+      Logger.log('Drive folder access error: ' + err.toString());
+    }
   }
 
   const sheet = getNotesSheet();
