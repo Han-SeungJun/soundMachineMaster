@@ -15,6 +15,7 @@
  */
 
 const DRIVE_FOLDER_ID = '1Cf-zzI7mW39rLaw-B3jvx5fN99Ajv0Ur';
+const SPREADSHEET_ID  = '1AWw7zH5PAGLLMgpQ5WfSN4-R7Cr2E2VeFxstQoxAU1k';
 
 function populateEditLinks() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -53,29 +54,42 @@ function populateEditLinks() {
   }
 }
 function doGet(e) {
-  const action = e.parameter.action;
-  if (action === 'getNotes') {
-    const itemId = e.parameter.itemId;
-    return ContentService.createTextOutput(JSON.stringify(getNotesFromSheet(itemId)))
+  try {
+    const action = e.parameter.action;
+    if (action === 'getNotes') {
+      const notes = getNotesFromSheet(e.parameter.itemId);
+      return ContentService.createTextOutput(JSON.stringify(notes))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    return ContentService.createTextOutput(JSON.stringify([]))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ error: err.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
 function doPost(e) {
-  const params = JSON.parse(e.postData.contents);
-  const action = params.action;
-  
-  if (action === 'addNote') {
-    return ContentService.createTextOutput(JSON.stringify(addNoteToSheet(params.note)))
+  try {
+    const params = JSON.parse(e.postData.contents);
+    const action = params.action;
+    if (action === 'addNote') {
+      return ContentService.createTextOutput(JSON.stringify(addNoteToSheet(params.note)))
+        .setMimeType(ContentService.MimeType.JSON);
+    } else if (action === 'deleteNote') {
+      return ContentService.createTextOutput(JSON.stringify(deleteNoteFromSheet(params.itemId, params.noteId)))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    return ContentService.createTextOutput(JSON.stringify({ error: 'Unknown action' }))
       .setMimeType(ContentService.MimeType.JSON);
-  } else if (action === 'deleteNote') {
-    return ContentService.createTextOutput(JSON.stringify(deleteNoteFromSheet(params.itemId, params.noteId)))
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ error: err.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
 function getNotesSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName("Notes");
   if (!sheet) {
     sheet = ss.insertSheet("Notes");
