@@ -14,6 +14,8 @@
  * 5. 저장을 누르면 이후부터 새로 등록되는 장비도 수정 링크가 자동으로 생성됩니다!
  */
 
+const DRIVE_FOLDER_ID = '1Cf-zzI7mW39rLaw-B3jvx5fN99Ajv0Ur';
+
 function populateEditLinks() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheets()[0]; 
@@ -103,16 +105,39 @@ function getNotesFromSheet(itemId) {
 }
 
 function addNoteToSheet(note) {
+  const driveUrls = [];
+
+  if (note.photos && note.photos.length > 0) {
+    const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
+    note.photos.forEach(function(photo) {
+      try {
+        const matches = photo.data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (!matches) return;
+        const mimeType = matches[1];
+        const blob = Utilities.newBlob(
+          Utilities.base64Decode(matches[2]),
+          mimeType,
+          photo.name || ('photo_' + Date.now() + '.jpg')
+        );
+        const file = folder.createFile(blob);
+        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        driveUrls.push('https://drive.google.com/uc?export=view&id=' + file.getId());
+      } catch (err) {
+        Logger.log('Photo upload error: ' + err.toString());
+      }
+    });
+  }
+
   const sheet = getNotesSheet();
   sheet.appendRow([
     note.itemId,
     note.id,
-    note.status,
-    note.memo,
-    JSON.stringify(note.photos),
+    note.status || '',
+    note.memo || '',
+    JSON.stringify(driveUrls),
     note.date
   ]);
-  return { success: true };
+  return { success: true, photos: driveUrls };
 }
 
 function deleteNoteFromSheet(itemId, noteId) {

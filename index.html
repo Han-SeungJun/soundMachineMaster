@@ -2362,10 +2362,10 @@
         if (!input.files || input.files.length === 0) return;
         Array.from(input.files).forEach(file => {
             const reader = new FileReader();
-            reader.onload = e => {
-                localPhotoDataUrls.push(e.target.result);
+            reader.onload = ev => {
+                localPhotoDataUrls.push({ data: ev.target.result, name: file.name, type: file.type });
                 const img = document.createElement('img');
-                img.src = e.target.result;
+                img.src = ev.target.result;
                 preview.appendChild(img);
             };
             reader.readAsDataURL(file);
@@ -2394,24 +2394,30 @@
             date: new Date().toLocaleString('ko-KR')
         };
 
-        // 로컬 저장 (백업용)
-        const notes = getLocalNotes(currentSelectedId);
-        notes.push(note);
-        localStorage.setItem(`notes_${currentSelectedId}`, JSON.stringify(notes));
+        const saveBtn = document.querySelector('.note-save-btn');
+        const originalHtml = saveBtn.innerHTML;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...';
+        saveBtn.disabled = true;
 
-        // 구글 시트 저장 (Web App URL이 있는 경우)
-        if (GOOGLE_WEBAPP_URL) {
-            try {
-                await fetch(GOOGLE_WEBAPP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', // GAS의 한계로 no-cors 사용 시 response body를 읽을 수 없으나 저장은 가능합니다.
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'addNote', note: note })
-                });
-            } catch (e) {
-                console.error('Sheet save failed:', e);
-            }
+        try {
+            const res = await fetch(GOOGLE_WEBAPP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: 'addNote', note: note })
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const result = await res.json();
+            if (!result.success) throw new Error('저장 실패');
+        } catch (e) {
+            console.error('Sheet save failed:', e);
+            showNotification('저장에 실패했습니다. 다시 시도해주세요.', 'error');
+            saveBtn.innerHTML = originalHtml;
+            saveBtn.disabled = false;
+            return;
         }
+
+        saveBtn.innerHTML = originalHtml;
+        saveBtn.disabled = false;
 
         if (status) {
             const item = inventoryData.find(i => i.id === currentSelectedId);
@@ -2429,7 +2435,7 @@
         document.getElementById('localPhotoPreview').innerHTML = '';
         localPhotoDataUrls = [];
         await renderNotes(currentSelectedId);
-        showNotification('기록이 구글 시트에 저장되었습니다.', 'success');
+        showNotification('기록이 저장되었습니다.', 'success');
     }
 
     function getLocalNotes(id) {
@@ -2438,28 +2444,22 @@
     }
 
     function getNoteCount(id) {
-        return getLocalNotes(id).length;
+        return parseInt(localStorage.getItem(`noteCount_${id}`)) || 0;
     }
 
     async function deleteNote(itemId, noteId) {
         if (!confirm('정말로 이 기록을 삭제할까요?')) return;
 
-        // 로컬 삭제
-        const notes = getLocalNotes(itemId).filter(n => n.id !== noteId);
-        localStorage.setItem(`notes_${itemId}`, JSON.stringify(notes));
-
-        // 구글 시트 삭제
-        if (GOOGLE_WEBAPP_URL) {
-            try {
-                await fetch(GOOGLE_WEBAPP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'deleteNote', itemId: itemId, noteId: noteId })
-                });
-            } catch (e) {
-                console.error('Sheet delete failed:', e);
-            }
+        try {
+            await fetch(GOOGLE_WEBAPP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: 'deleteNote', itemId: itemId, noteId: noteId })
+            });
+        } catch (e) {
+            console.error('Sheet delete failed:', e);
+            showNotification('삭제에 실패했습니다.', 'error');
+            return;
         }
 
         await renderNotes(itemId);
@@ -2470,25 +2470,19 @@
         const area = document.getElementById('notesHistoryArea');
         if (!area) return;
 
-        // 1. 로컬 데이터 먼저 표시
-        let notes = getLocalNotes(id);
-
-        // 2. 구글 시트에서 최신 데이터 가져오기 (Web App URL이 있는 경우)
-        if (GOOGLE_WEBAPP_URL) {
-            try {
-                const res = await fetch(`${GOOGLE_WEBAPP_URL}?action=getNotes&itemId=${id}`);
-                if (res.ok) {
-                    const sheetNotes = await res.json();
-                    if (sheetNotes && sheetNotes.length > 0) {
-                        notes = sheetNotes;
-                        // 로컬 캐시 업데이트
-                        localStorage.setItem(`notes_${id}`, JSON.stringify(notes));
-                    }
-                }
-            } catch (e) {
-                console.error('Sheet fetch failed:', e);
-            }
+        let notes = [];
+        try {
+            const res = await fetch(`${GOOGLE_WEBAPP_URL}?action=getNotes&itemId=${id}`);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            notes = await res.json();
+        } catch (e) {
+            console.error('Notes fetch failed:', e);
+            area.innerHTML = '<div style="color:#ef4444;font-size:13px;padding:8px 0;">기록을 불러오지 못했습니다.</div>';
+            return;
         }
+
+        // 뱃지 카운트 캐시 갱신
+        localStorage.setItem(`noteCount_${id}`, notes.length);
 
         if (notes.length === 0) { area.innerHTML = ''; return; }
 
