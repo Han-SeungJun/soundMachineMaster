@@ -1932,7 +1932,7 @@
     // ═══ CONFIG ═══
     const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeAbW1PX3Cg9oNc3kn0p0HLTkfDDg0C1QEGHOqxbQ25Zo69Rw/viewform?usp=sharing&ouid=106361419293264327468";
     const GOOGLE_SHEET_API = "https://docs.google.com/spreadsheets/d/1AWw7zH5PAGLLMgpQ5WfSN4-R7Cr2E2VeFxstQoxAU1k/gviz/tq?tqx=out:json&gid=432772852";
-    const GOOGLE_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxOSwmwI3_5Qe0qzT3rODexVVafXFbwi_GDKuCZkeS6LyRddN1InuI7Q5EI4dT8L1dSxQ/exec";
+    const GOOGLE_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzFn_aWZmXa9Yjtx4YxXTteFtkgMndXE087en-cTfWE8CSDPPPQ0nyeLQnuATJIEA43aQ/exec";
 
     const LOCATIONS = [
         "지하 1층 리바이벌 성전", "1층 유치부실", "1층 다윗의 장막",
@@ -2432,8 +2432,10 @@
         document.getElementById('localPhotoInput').value = '';
         document.getElementById('localPhotoPreview').innerHTML = '';
         localPhotoDataUrls = [];
-        await renderNotes(currentSelectedId);
         showNotification('기록이 저장되었습니다.', 'success');
+        // GAS가 시트에 반영할 시간을 확보한 뒤 목록 갱신
+        await new Promise(r => setTimeout(r, 1500));
+        await renderNotes(currentSelectedId);
     }
 
     function getLocalNotes(id) {
@@ -2461,6 +2463,7 @@
             return;
         }
 
+        await new Promise(r => setTimeout(r, 1500));
         await renderNotes(itemId);
         renderInventory();
     }
@@ -2473,10 +2476,12 @@
         try {
             const res = await fetch(`${GOOGLE_WEBAPP_URL}?action=getNotes&itemId=${id}`);
             if (!res.ok) throw new Error('HTTP ' + res.status);
-            notes = await res.json();
+            const data = await res.json();
+            if (data && data.error) throw new Error(data.error);
+            notes = Array.isArray(data) ? data : [];
         } catch (e) {
             console.error('Notes fetch failed:', e);
-            area.innerHTML = '<div style="color:#ef4444;font-size:13px;padding:8px 0;">기록을 불러오지 못했습니다.</div>';
+            area.innerHTML = `<div style="color:#ef4444;font-size:13px;padding:8px 0;"><i class="fas fa-triangle-exclamation"></i> 기록을 불러오지 못했습니다.<br><span style="font-size:11px;opacity:.7;">${escapeHtml(e.message)}</span></div>`;
             return;
         }
 
