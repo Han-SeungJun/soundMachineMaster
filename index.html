@@ -2404,6 +2404,8 @@
         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...';
         saveBtn.disabled = true;
 
+        let drivePhotos = [];
+        let photoErrors = [];
         try {
             const saveResp = await fetch(GOOGLE_WEBAPP_URL, {
                 method: 'POST',
@@ -2413,6 +2415,8 @@
             if (!saveResp.ok) throw new Error('서버 오류: ' + saveResp.status);
             const saveResult = await saveResp.json();
             if (saveResult && saveResult.error) throw new Error(saveResult.error);
+            if (saveResult && saveResult.photos) drivePhotos = saveResult.photos;
+            if (saveResult && saveResult.photoErrors) photoErrors = saveResult.photoErrors;
         } catch (e) {
             console.error('Sheet save failed:', e);
             showNotification('저장 실패: ' + e.message, 'error');
@@ -2444,14 +2448,19 @@
             itemId: note.itemId, id: note.id,
             status: note.status || '',
             memo: note.memo || '',
-            photos: note.photos.map(p => p.data || p), // 미리보기용 data URL
+            photos: drivePhotos.length > 0 ? drivePhotos : note.photos.map(p => p.data || p),
             date: note.date
         };
         if (!pendingNotes[currentSelectedId]) pendingNotes[currentSelectedId] = [];
         pendingNotes[currentSelectedId].push(pendingNote);
 
         localPhotoDataUrls = [];
-        showNotification('기록이 저장되었습니다.', 'success');
+        if (photoErrors.length > 0) {
+            console.error('Photo upload errors:', photoErrors);
+            showNotification('메모 저장됨. 사진 업로드 실패: ' + photoErrors[0], 'error');
+        } else {
+            showNotification('기록이 저장되었습니다.', 'success');
+        }
         await renderNotes(currentSelectedId);
     }
 

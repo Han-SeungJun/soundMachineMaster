@@ -120,14 +120,16 @@ function getNotesFromSheet(itemId) {
 
 function addNoteToSheet(note) {
   const driveUrls = [];
+  const photoErrors = [];
 
   if (note.photos && note.photos.length > 0) {
     try {
       const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
       note.photos.forEach(function(photo) {
         try {
+          if (!photo || !photo.data) { photoErrors.push('photo.data 없음'); return; }
           const matches = photo.data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-          if (!matches) return;
+          if (!matches) { photoErrors.push('base64 형식 불일치: ' + String(photo.data).substring(0, 30)); return; }
           const mimeType = matches[1];
           const blob = Utilities.newBlob(
             Utilities.base64Decode(matches[2]),
@@ -139,10 +141,12 @@ function addNoteToSheet(note) {
           driveUrls.push('https://drive.google.com/uc?export=view&id=' + file.getId());
         } catch (err) {
           Logger.log('Photo upload error: ' + err.toString());
+          photoErrors.push(err.toString());
         }
       });
     } catch (err) {
       Logger.log('Drive folder access error: ' + err.toString());
+      photoErrors.push('Drive 폴더 오류: ' + err.toString());
     }
   }
 
@@ -155,7 +159,7 @@ function addNoteToSheet(note) {
     JSON.stringify(driveUrls),
     note.date
   ]);
-  return { success: true, photos: driveUrls };
+  return { success: true, photos: driveUrls, photoErrors: photoErrors };
 }
 
 function deleteNoteFromSheet(itemId, noteId) {
