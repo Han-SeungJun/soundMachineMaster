@@ -50,3 +50,78 @@ function populateEditLinks() {
     }
   }
 }
+function doGet(e) {
+  const action = e.parameter.action;
+  if (action === 'getNotes') {
+    const itemId = e.parameter.itemId;
+    return ContentService.createTextOutput(JSON.stringify(getNotesFromSheet(itemId)))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doPost(e) {
+  const params = JSON.parse(e.postData.contents);
+  const action = params.action;
+  
+  if (action === 'addNote') {
+    return ContentService.createTextOutput(JSON.stringify(addNoteToSheet(params.note)))
+      .setMimeType(ContentService.MimeType.JSON);
+  } else if (action === 'deleteNote') {
+    return ContentService.createTextOutput(JSON.stringify(deleteNoteFromSheet(params.itemId, params.noteId)))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function getNotesSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName("Notes");
+  if (!sheet) {
+    sheet = ss.insertSheet("Notes");
+    sheet.appendRow(["GearID", "NoteID", "Status", "Memo", "Photos", "Date"]);
+    sheet.getRange(1, 1, 1, 6).setFontWeight("bold").setBackground("#f3f3f3");
+  }
+  return sheet;
+}
+
+function getNotesFromSheet(itemId) {
+  const sheet = getNotesSheet();
+  const data = sheet.getDataRange().getValues();
+  const notes = [];
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] == itemId) {
+      notes.push({
+        itemId: data[i][0],
+        id: data[i][1],
+        status: data[i][2],
+        memo: data[i][3],
+        photos: JSON.parse(data[i][4] || "[]"),
+        date: data[i][5]
+      });
+    }
+  }
+  return notes;
+}
+
+function addNoteToSheet(note) {
+  const sheet = getNotesSheet();
+  sheet.appendRow([
+    note.itemId,
+    note.id,
+    note.status,
+    note.memo,
+    JSON.stringify(note.photos),
+    note.date
+  ]);
+  return { success: true };
+}
+
+function deleteNoteFromSheet(itemId, noteId) {
+  const sheet = getNotesSheet();
+  const data = sheet.getDataRange().getValues();
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (data[i][0] == itemId && data[i][1] == noteId) {
+      sheet.deleteRow(i + 1);
+    }
+  }
+  return { success: true };
+}
