@@ -22,11 +22,11 @@ const DEPARTMENTS = ["예배팀", "방송팀", "유치부", "중고등부", "청
 
 // Dummy Data for Preview (Updated with new fields)
 let inventoryData = [
-    { id: 1, name: "JBL SRX815P", category: "Speaker", status: "가용", serial: "JBL-99201", location: "지하 1층 리바이벌 성전", date: "2024-01-15", user: "홍길동", purpose: "정기예배", department: "예배팀", icon: "fa-volume-high" },
-    { id: 2, name: "Shure SM58", category: "Microphone", status: "대여중", serial: "SH-88421", location: "1층 유치부실", date: "2024-02-10", user: "김철수", purpose: "공지사항", department: "유치부", icon: "fa-microphone" },
-    { id: 3, name: "Yamaha CL5", category: "Mixer", status: "가용", serial: "YM-11200", location: "3층 본당", date: "2023-11-05", user: "이영희", purpose: "메인예배", department: "방송팀", icon: "fa-sliders" },
-    { id: 4, name: "Sennheiser EW-D", category: "Microphone", status: "수리중", serial: "SN-44510", location: "수리실", date: "2024-02-20", user: "박민수", purpose: "마이크 교체", department: "관리팀", icon: "fa-microphone-lines" },
-    { id: 5, name: "QSC K12.2", category: "Speaker", status: "가용", serial: "QS-77310", location: "2층 웨일즈성전", date: "2024-01-20", user: "정소라", purpose: "찬양연습", department: "청년부", icon: "fa-volume-high" }
+    { id: 1, name: "JBL SRX815P", category: "Speaker", status: "가용", location: "지하 1층 리바이벌 성전", date: "2024-01-15", user: "홍길동", purpose: "정기예배", department: "예배팀", icon: "fa-volume-high" },
+    { id: 2, name: "Shure SM58", category: "Microphone", status: "대여중", location: "1층 유치부실", date: "2024-02-10", user: "김철수", purpose: "공지사항", department: "유치부", icon: "fa-microphone" },
+    { id: 3, name: "Yamaha CL5", category: "Mixer", status: "가용", location: "3층 본당", date: "2023-11-05", user: "이영희", purpose: "메인예배", department: "방송팀", icon: "fa-sliders" },
+    { id: 4, name: "Sennheiser EW-D", category: "Microphone", status: "수리중", location: "수리실", date: "2024-02-20", user: "박민수", purpose: "마이크 교체", department: "관리팀", icon: "fa-microphone-lines" },
+    { id: 5, name: "QSC K12.2", category: "Speaker", status: "가용", location: "2층 웨일즈성전", date: "2024-01-20", user: "정소라", purpose: "찬양연습", department: "청년부", icon: "fa-volume-high" }
 ];
 
 let currentSelectedId = null;
@@ -170,7 +170,6 @@ function renderInventory(data = inventoryData) {
                 <div class="gear-category">${item.category}</div>
                 <div class="gear-name">${item.name}</div>
                 <div class="gear-meta">
-                    <span><i class="fas fa-barcode"></i> ${item.serial}</span>
                     <span><i class="fas fa-location-dot"></i> ${item.location}</span>
                     <span><i class="fas fa-user"></i> ${item.user} (${item.department})</span>
                     <span><i class="fas fa-info-circle"></i> ${item.purpose}</span>
@@ -226,7 +225,7 @@ function filterInventory() {
     const depFilter = document.getElementById('departmentFilter').value;
 
     const filtered = inventoryData.filter(item => {
-        const matchesSearch = item.name.toLowerCase().includes(searchTerm) || item.serial.toLowerCase().includes(searchTerm);
+        const matchesSearch = item.name.toLowerCase().includes(searchTerm);
         const matchesCat = catFilter === 'all' || item.category === catFilter;
         const matchesStat = statFilter === 'all' || item.status === statFilter;
         const matchesLoc = locFilter === 'all' || item.location === locFilter;
@@ -255,10 +254,6 @@ function openModal(id) {
                 <span class="status-tag ${getStatusClass(item.status)}">${item.status}</span>
             </div>
             <div class="detail-item">
-                <span class="detail-label">시리얼 번호</span>
-                <span class="detail-value">${item.serial}</span>
-            </div>
-            <div class="detail-item">
                 <span class="detail-label">보관장소/사용장소</span>
                 <span class="detail-value">${item.location}</span>
             </div>
@@ -281,7 +276,6 @@ function openModal(id) {
         </div>
     `;
 
-    // Set edit actions
     const editBtn = document.getElementById('modalEditBtn');
     if (item.editUrl && item.editUrl !== "-" && item.editUrl !== "") {
         editBtn.onclick = () => {
@@ -294,7 +288,7 @@ function openModal(id) {
             closeModal();
             openFormModal();
         };
-        editBtn.innerHTML = "새로운 장비로 등록/변경";
+        editBtn.innerHTML = "이 장비 상태 수정하기"; // Always show "Modify" for existing items
     }
 
     document.getElementById('gearModal').classList.add('active');
@@ -475,7 +469,6 @@ async function fetchDataFromGS() {
                     obj.icon = getIconByCategory(val);
                 }
                 else if (h.includes("상태")) obj.status = val;
-                else if (h.includes("시리얼")) obj.serial = val;
                 else if (h.includes("위치")) obj.location = val;
                 else if (h.includes("사용자")) obj.user = val;
                 else if (h.includes("목적")) obj.purpose = val;
@@ -497,7 +490,6 @@ async function fetchDataFromGS() {
             if (!obj.name) obj.name = "-";
             if (!obj.category) obj.category = "기타";
             if (!obj.status) obj.status = "-";
-            if (!obj.serial) obj.serial = "-";
             if (!obj.location) obj.location = "-";
             if (!obj.user) obj.user = "-";
             if (!obj.purpose) obj.purpose = "-";
@@ -530,5 +522,7 @@ function getIconByCategory(category) {
     if (cat.includes("마이크") || cat.includes("mic")) return "fa-microphone";
     if (cat.includes("믹서") || cat.includes("mixer")) return "fa-sliders";
     if (cat.includes("케이블") || cat.includes("cable")) return "fa-link";
+    if (cat.includes("사진") || cat.includes("photo") || cat.includes("camera")) return "fa-camera";
+    if (cat.includes("영상") || cat.includes("video") || cat.includes("film")) return "fa-video";
     return "fa-box";
 }

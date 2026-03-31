@@ -59,8 +59,7 @@
             <header class="top-bar">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="gearSearch" placeholder="장비명, 시리얼 번호, 카테고리 검색..."
-                        onkeyup="filterInventory()">
+                    <input type="text" id="gearSearch" placeholder="장비명, 카테고리 검색..." onkeyup="filterInventory()">
                 </div>
                 <div class="header-actions">
                     <button class="icon-btn" onclick="openHistoryModal()">
@@ -184,6 +183,8 @@
                                 <option value="Microphone">마이크</option>
                                 <option value="Mixer">믹서</option>
                                 <option value="Cable">케이블</option>
+                                <option value="사진">사진</option>
+                                <option value="영상">영상</option>
                                 <option value="Other">기타</option>
                             </select>
                             <select id="statusFilter" onchange="filterInventory()">
