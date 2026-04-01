@@ -1,8 +1,8 @@
 /**
  * SoundMaster Edit URL Generator
- * 
+ *
  * 구글 폼의 "응답 수정" 링크를 구글 시트의 [K열]에 자동으로 기록해주는 스크립트입니다.
- * 
+ *
  * [사용 방법]
  * 1. 메뉴 바에서 [실행] 버튼을 눌러 먼저 'populateEditLinks' 함수를 1회 실행하세요. (권한 허용 창이 뜨면 모두 허용해주세요)
  * 2. 화면 좌측의 시계(알람) 모양 아이콘인 [트리거] 메뉴로 이동합니다.
@@ -14,45 +14,39 @@
  * 5. 저장을 누르면 이후부터 새로 등록되는 장비도 수정 링크가 자동으로 생성됩니다!
  */
 
-const DRIVE_FOLDER_ID = '1Cf-zzI7mW39rLaw-B3jvx5fN99Ajv0Ur';
-const SPREADSHEET_ID  = '1AWw7zH5PAGLLMgpQ5WfSN4-R7Cr2E2VeFxstQoxAU1k';
+const SPREADSHEET_ID = '1AWw7zH5PAGLLMgpQ5WfSN4-R7Cr2E2VeFxstQoxAU1k';
 
 function populateEditLinks() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheets()[0]; 
+  const sheet = ss.getSheets()[0];
   const formUrl = ss.getFormUrl();
-  
+
   if (!formUrl) {
     Logger.log("연결된 설문지가 존재하지 않습니다. 먼저 폼을 시트에 연결해주세요.");
     return;
   }
-  
+
   const form = FormApp.openByUrl(formUrl);
   const responses = form.getResponses();
   const data = sheet.getDataRange().getValues();
-  
+
   if (data.length <= 1) return;
-  
-  // 11번째 열(K열)에 수정 링크 컬럼을 생성합니다.
+
   if (data[0].length < 11 || data[0][10] !== "수정 링크") {
     sheet.getRange(1, 11).setValue("수정 링크");
   }
-  
-  // 데이터 행의 개수에 맞게 수정 링크를 가져옵니다.
-  // 응답 순서와 시트의 행 순서가 일치한다고 가정합니다.
+
   for (let i = 1; i < data.length; i++) {
-    // 응답 배열은 0부터 시작하므로 리스폰스는 i-1
     if (responses[i - 1]) {
       const editUrl = responses[i - 1].getEditResponseUrl();
-      const currentUrlInSheet = data[i][10]; // 배열에서 10번째가 K열
-      
-      // 혹시 비어있거나 다르면 업데이트
+      const currentUrlInSheet = data[i][10];
       if (currentUrlInSheet !== editUrl) {
         sheet.getRange(i + 1, 11).setValue(editUrl);
       }
     }
   }
 }
+
 function doGet(e) {
   try {
     const action = e.parameter.action;
@@ -88,6 +82,7 @@ function doPost(e) {
   }
 }
 
+// Notes 시트: GearID | NoteID | Status | Memo | (Photos - 미사용, 호환용 빈칸) | Date
 function getNotesSheet() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName("Notes");
@@ -99,19 +94,53 @@ function getNotesSheet() {
   return sheet;
 }
 
+// PhotosData 시트: NoteID | PhotoIndex | Filename | Base64Data
+function getPhotosDataSheet() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName("PhotosData");
+  if (!sheet) {
+    sheet = ss.insertSheet("PhotosData");
+    sheet.appendRow(["NoteID", "PhotoIndex", "Filename", "Base64Data"]);
+    sheet.getRange(1, 1, 1, 4).setFontWeight("bold").setBackground("#f3f3f3");
+  }
+  return sheet;
+}
+
 function getNotesFromSheet(itemId) {
-  const sheet = getNotesSheet();
-  const data = sheet.getDataRange().getValues();
+  const notesSheet = getNotesSheet();
+  const notesData = notesSheet.getDataRange().getValues();
+
+  // PhotosData 시트에서 사진 로드 후 NoteID 기준으로 매핑
+  const photosSheet = getPhotosDataSheet();
+  const photosData = photosSheet.getDataRange().getValues();
+  const photosMap = {};
+  for (let i = 1; i < photosData.length; i++) {
+    const nid = String(photosData[i][0]);
+    if (!photosMap[nid]) photosMap[nid] = [];
+    photosMap[nid].push({
+      index: Number(photosData[i][1]),
+      name: photosData[i][2] || '',
+      data: photosData[i][3] || ''
+    });
+  }
+  // PhotoIndex 기준 정렬
+  Object.values(photosMap).forEach(function(arr) {
+    arr.sort(function(a, b) { return a.index - b.index; });
+  });
+
   const notes = [];
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0] == itemId) {
+  for (let i = 1; i < notesData.length; i++) {
+    if (notesData[i][0] == itemId) {
+      const nid = String(notesData[i][1]);
       notes.push({
-        itemId: data[i][0],
-        id: data[i][1],
-        status: data[i][2],
-        memo: data[i][3],
-        photos: JSON.parse(data[i][4] || "[]"),
-        date: data[i][5]
+        itemId: notesData[i][0],
+        id: notesData[i][1],
+        status: notesData[i][2],
+        memo: notesData[i][3],
+        photos: (photosMap[nid] || []).map(function(p) {
+          return { data: p.data, name: p.name };
+        }),
+        date: notesData[i][5]
       });
     }
   }
@@ -119,56 +148,54 @@ function getNotesFromSheet(itemId) {
 }
 
 function addNoteToSheet(note) {
-  const driveUrls = [];
-  const photoErrors = [];
+  const notesSheet = getNotesSheet();
+  const photosSheet = getPhotosDataSheet();
 
+  // 사진을 PhotosData 시트에 한 행씩 저장 (DriveApp 불필요)
   if (note.photos && note.photos.length > 0) {
-    try {
-      const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
-      note.photos.forEach(function(photo) {
-        try {
-          if (!photo || !photo.data) { photoErrors.push('photo.data 없음'); return; }
-          const matches = photo.data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-          if (!matches) { photoErrors.push('base64 형식 불일치: ' + String(photo.data).substring(0, 30)); return; }
-          const mimeType = matches[1];
-          const blob = Utilities.newBlob(
-            Utilities.base64Decode(matches[2]),
-            mimeType,
-            photo.name || ('photo_' + Date.now() + '.jpg')
-          );
-          const file = folder.createFile(blob);
-          file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-          driveUrls.push('https://drive.google.com/uc?export=view&id=' + file.getId());
-        } catch (err) {
-          Logger.log('Photo upload error: ' + err.toString());
-          photoErrors.push(err.toString());
-        }
-      });
-    } catch (err) {
-      Logger.log('Drive folder access error: ' + err.toString());
-      photoErrors.push('Drive 폴더 오류: ' + err.toString());
-    }
+    note.photos.forEach(function(photo, idx) {
+      if (photo && photo.data) {
+        photosSheet.appendRow([
+          note.id,
+          idx,
+          photo.name || ('photo_' + idx + '.jpg'),
+          photo.data
+        ]);
+      }
+    });
   }
 
-  const sheet = getNotesSheet();
-  sheet.appendRow([
+  // Notes 시트에 메모 저장 (Photos 열은 호환용 빈 배열)
+  notesSheet.appendRow([
     note.itemId,
     note.id,
     note.status || '',
     note.memo || '',
-    JSON.stringify(driveUrls),
+    '[]',
     note.date
   ]);
-  return { success: true, photos: driveUrls, photoErrors: photoErrors };
+
+  return { success: true, photoErrors: [] };
 }
 
 function deleteNoteFromSheet(itemId, noteId) {
-  const sheet = getNotesSheet();
-  const data = sheet.getDataRange().getValues();
-  for (let i = data.length - 1; i >= 1; i--) {
-    if (data[i][0] == itemId && data[i][1] == noteId) {
-      sheet.deleteRow(i + 1);
+  // Notes 시트에서 삭제
+  const notesSheet = getNotesSheet();
+  const notesData = notesSheet.getDataRange().getValues();
+  for (let i = notesData.length - 1; i >= 1; i--) {
+    if (notesData[i][0] == itemId && notesData[i][1] == noteId) {
+      notesSheet.deleteRow(i + 1);
     }
   }
+
+  // PhotosData 시트에서 해당 NoteID 사진 모두 삭제
+  const photosSheet = getPhotosDataSheet();
+  const photosData = photosSheet.getDataRange().getValues();
+  for (let j = photosData.length - 1; j >= 1; j--) {
+    if (String(photosData[j][0]) === String(noteId)) {
+      photosSheet.deleteRow(j + 1);
+    }
+  }
+
   return { success: true };
 }
