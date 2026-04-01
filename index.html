@@ -595,8 +595,8 @@
     }
 
     .status-tag.issue {
-        background: rgba(168, 85, 247, 0.1);
-        color: #9333ea;
+        background: rgba(220, 38, 38, 0.1);
+        color: #dc2626;
     }
 
     .status-tag.lost {
@@ -773,7 +773,7 @@
     }
 
     .gear-accent.issue {
-        background: linear-gradient(90deg, #a855f7, #c084fc);
+        background: linear-gradient(90deg, #dc2626, #f87171);
     }
 
     .gear-accent.default {
@@ -2366,12 +2366,40 @@
         preview.innerHTML = '';
         if (!input.files || input.files.length === 0) return;
         Array.from(input.files).forEach(file => {
+            const now = new Date();
+            const stamp = [
+                now.getFullYear(),
+                String(now.getMonth() + 1).padStart(2, '0'),
+                String(now.getDate()).padStart(2, '0')
+            ].join('') + '_' + [
+                String(now.getHours()).padStart(2, '0'),
+                String(now.getMinutes()).padStart(2, '0'),
+                String(now.getSeconds()).padStart(2, '0')
+            ].join('');
+            const fname = stamp + '_' + file.name;
+
             const reader = new FileReader();
             reader.onload = ev => {
-                localPhotoDataUrls.push({ data: ev.target.result, name: file.name, type: file.type });
-                const img = document.createElement('img');
-                img.src = ev.target.result;
-                preview.appendChild(img);
+                // Canvas로 압축: 최대 480px, JPEG quality 0.45 (DriveApp 없이 시트에 직접 저장)
+                const rawImg = new Image();
+                rawImg.onload = () => {
+                    const MAX = 480;
+                    let w = rawImg.width, h = rawImg.height;
+                    if (w > MAX || h > MAX) {
+                        if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
+                        else { w = Math.round(w * MAX / h); h = MAX; }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(rawImg, 0, 0, w, h);
+                    const compressed = canvas.toDataURL('image/jpeg', 0.45);
+                    localPhotoDataUrls.push({ data: compressed, name: fname });
+                    const thumb = document.createElement('img');
+                    thumb.src = compressed;
+                    thumb.title = fname;
+                    preview.appendChild(thumb);
+                };
+                rawImg.src = ev.target.result;
             };
             reader.readAsDataURL(file);
         });
@@ -2443,24 +2471,19 @@
         document.getElementById('localPhotoInput').value = '';
         document.getElementById('localPhotoPreview').innerHTML = '';
 
-        // pendingNotes에 등록 (gviz 캐시 반영 전 즉시 표시용)
+        // pendingNotes에 등록 (서버 반영 전 즉시 표시용)
         const pendingNote = {
             itemId: note.itemId, id: note.id,
             status: note.status || '',
             memo: note.memo || '',
-            photos: drivePhotos.length > 0 ? drivePhotos : note.photos.map(p => p.data || p),
+            photos: [...note.photos], // {data, name} 객체 그대로 유지
             date: note.date
         };
         if (!pendingNotes[currentSelectedId]) pendingNotes[currentSelectedId] = [];
         pendingNotes[currentSelectedId].push(pendingNote);
 
         localPhotoDataUrls = [];
-        if (photoErrors.length > 0) {
-            console.error('Photo upload errors:', photoErrors);
-            showNotification('메모 저장됨. 사진 업로드 실패: ' + photoErrors[0], 'error');
-        } else {
-            showNotification('기록이 저장되었습니다.', 'success');
-        }
+        showNotification('기록이 저장되었습니다.', 'success');
         await renderNotes(currentSelectedId);
     }
 
@@ -2502,33 +2525,22 @@
         const area = document.getElementById('notesHistoryArea');
         if (!area) return;
 
-        // 1. gviz/tq로 Notes 시트 읽기 (CORS 없음)
+        // 1. Apps Script doGet으로 Notes + PhotosData 통합 조회 (사진 포함)
         let sheetNotes = [];
-        if (NOTES_SHEET_URL) {
-            try {
-                const res = await fetch(NOTES_SHEET_URL);
-                const text = await res.text();
-                const m = text.match(/google\.visualization\.Query\.setResponse\(([\s\S\w]+)\);?/);
-                if (m) {
-                    const json = JSON.parse(m[1]);
-                    if (json.status !== 'error' && json.table && json.table.rows) {
-                        sheetNotes = json.table.rows.map(row => ({
-                            itemId: row.c[0] ? row.c[0].v : null,
-                            id: row.c[1] ? row.c[1].v : null,
-                            status: row.c[2] ? (row.c[2].v || '') : '',
-                            memo: row.c[3] ? (row.c[3].v || '') : '',
-                            photos: (() => { try { return JSON.parse(row.c[4] && row.c[4].v ? row.c[4].v : '[]'); } catch { return []; } })(),
-                            date: row.c[5] ? (row.c[5].f || String(row.c[5].v) || '') : ''
-                        })).filter(n => n.itemId != null && String(n.itemId) === String(id));
-                    }
+        try {
+            const res = await fetch(GOOGLE_WEBAPP_URL + '?action=getNotes&itemId=' + encodeURIComponent(id));
+            if (res.ok) {
+                const data = await res.json();
+                if (Array.isArray(data)) {
+                    sheetNotes = data.filter(n => n.itemId != null && String(n.itemId) === String(id));
                 }
-            } catch (e) { console.warn('Notes gviz fetch failed:', e); }
-        }
+            }
+        } catch (e) { console.warn('Notes fetch failed:', e); }
 
-        // 2. 삭제된 항목 필터링 (아직 gviz 캐시에서 제거 안 됐을 수 있음)
+        // 2. 삭제된 항목 필터링
         sheetNotes = sheetNotes.filter(n => !deletedNoteIds.has(String(n.id)));
 
-        // 3. pending 노트 병합 (저장 후 gviz 캐시 반영 전 즉시 표시)
+        // 3. pending 노트 병합 (저장 직후 서버 반영 전 즉시 표시)
         const pending = (pendingNotes[id] || []).filter(
             pn => !sheetNotes.some(sn => String(sn.id) === String(pn.id)) && !deletedNoteIds.has(String(pn.id))
         );
@@ -2543,7 +2555,11 @@
             const statusHtml = note.status ? `<span class="status-tag ${getStatusClass(note.status)}" style="font-size:10.5px;">${escapeHtml(note.status)}</span>` : '';
             const memoHtml = note.memo ? `<div class="note-memo">${escapeHtml(note.memo)}</div>` : '';
             const photosHtml = note.photos?.length > 0
-                ? `<div class="note-photos">${note.photos.map(p => `<img src="${p}" onclick="showImageModal(this.src)" title="클릭하면 크게 보기">`).join('')}</div>`
+                ? `<div class="note-photos">${note.photos.map(p => {
+                    const src = (p && typeof p === 'object') ? (p.data || '') : (p || '');
+                    const name = (p && typeof p === 'object') ? (p.name || '') : '';
+                    return src ? `<img src="${src}" onclick="showImageModal(this.src)" title="${escapeHtml(name) || '클릭하면 크게 보기'}">` : '';
+                }).filter(Boolean).join('')}</div>`
                 : '';
             return `
                 <div class="note-item">
