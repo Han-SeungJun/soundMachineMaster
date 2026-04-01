@@ -4,14 +4,8 @@
  * 구글 폼의 "응답 수정" 링크를 구글 시트의 [K열]에 자동으로 기록해주는 스크립트입니다.
  *
  * [사용 방법]
- * 1. 메뉴 바에서 [실행] 버튼을 눌러 먼저 'populateEditLinks' 함수를 1회 실행하세요. (권한 허용 창이 뜨면 모두 허용해주세요)
- * 2. 화면 좌측의 시계(알람) 모양 아이콘인 [트리거] 메뉴로 이동합니다.
- * 3. 우측 하단의 [트리거 추가(Add Trigger)] 파란색 버튼을 클릭합니다.
- * 4. 트리거 설정을 다음과 같이 맞춥니다:
- *    - 실행할 함수: populateEditLinks
- *    - 실행해야 할 이벤트 소스: 스프레드시트에서
- *    - 이벤트 유형: 양식 제출 시 (또는 폼 제출 시)
- * 5. 저장을 누르면 이후부터 새로 등록되는 장비도 수정 링크가 자동으로 생성됩니다!
+ * 1. 메뉴 바에서 [실행] 버튼을 눌러 먼저 'populateEditLinks' 함수를 1회 실행하세요.
+ * 2. [트리거] 메뉴 → [트리거 추가] → populateEditLinks / 스프레드시트에서 / 양식 제출 시
  */
 
 const SPREADSHEET_ID = '1AWw7zH5PAGLLMgpQ5WfSN4-R7Cr2E2VeFxstQoxAU1k';
@@ -22,7 +16,7 @@ function populateEditLinks() {
   const formUrl = ss.getFormUrl();
 
   if (!formUrl) {
-    Logger.log("연결된 설문지가 존재하지 않습니다. 먼저 폼을 시트에 연결해주세요.");
+    Logger.log("연결된 설문지가 존재하지 않습니다.");
     return;
   }
 
@@ -39,8 +33,7 @@ function populateEditLinks() {
   for (let i = 1; i < data.length; i++) {
     if (responses[i - 1]) {
       const editUrl = responses[i - 1].getEditResponseUrl();
-      const currentUrlInSheet = data[i][10];
-      if (currentUrlInSheet !== editUrl) {
+      if (data[i][10] !== editUrl) {
         sheet.getRange(i + 1, 11).setValue(editUrl);
       }
     }
@@ -51,7 +44,8 @@ function doGet(e) {
   try {
     const action = e.parameter.action;
     if (action === 'getNotes') {
-      const notes = getNotesFromSheet(e.parameter.itemId);
+      const includePhotos = e.parameter.includePhotos === 'true';
+      const notes = getNotesFromSheet(e.parameter.itemId, includePhotos);
       return ContentService.createTextOutput(JSON.stringify(notes))
         .setMimeType(ContentService.MimeType.JSON);
     }
@@ -82,14 +76,14 @@ function doPost(e) {
   }
 }
 
-// Notes 시트: GearID | NoteID | Status | Memo | (Photos - 미사용, 호환용 빈칸) | Date
+// Notes 시트: GearID | NoteID | Status | Memo | Date  (Photos 컬럼 없음)
 function getNotesSheet() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName("Notes");
   if (!sheet) {
     sheet = ss.insertSheet("Notes");
-    sheet.appendRow(["GearID", "NoteID", "Status", "Memo", "Photos", "Date"]);
-    sheet.getRange(1, 1, 1, 6).setFontWeight("bold").setBackground("#f3f3f3");
+    sheet.appendRow(["GearID", "NoteID", "Status", "Memo", "Date"]);
+    sheet.getRange(1, 1, 1, 5).setFontWeight("bold").setBackground("#f3f3f3");
   }
   return sheet;
 }
@@ -106,27 +100,32 @@ function getPhotosDataSheet() {
   return sheet;
 }
 
-function getNotesFromSheet(itemId) {
+/**
+ * includePhotos=false(기본): PhotosData 시트를 읽지 않아 빠름 → 대시보드/배너용
+ * includePhotos=true: PhotosData 포함 → 상세 모달 사진 표시용
+ */
+function getNotesFromSheet(itemId, includePhotos) {
   const notesSheet = getNotesSheet();
   const notesData = notesSheet.getDataRange().getValues();
 
-  // PhotosData 시트에서 사진 로드 후 NoteID 기준으로 매핑
-  const photosSheet = getPhotosDataSheet();
-  const photosData = photosSheet.getDataRange().getValues();
-  const photosMap = {};
-  for (let i = 1; i < photosData.length; i++) {
-    const nid = String(photosData[i][0]);
-    if (!photosMap[nid]) photosMap[nid] = [];
-    photosMap[nid].push({
-      index: Number(photosData[i][1]),
-      name: photosData[i][2] || '',
-      data: photosData[i][3] || ''
+  // 컬럼 순서: [0]GearID [1]NoteID [2]Status [3]Memo [4]Date
+  var photosMap = {};
+  if (includePhotos) {
+    const photosSheet = getPhotosDataSheet();
+    const photosData = photosSheet.getDataRange().getValues();
+    for (let i = 1; i < photosData.length; i++) {
+      const nid = String(photosData[i][0]);
+      if (!photosMap[nid]) photosMap[nid] = [];
+      photosMap[nid].push({
+        index: Number(photosData[i][1]),
+        name: photosData[i][2] || '',
+        data: photosData[i][3] || ''
+      });
+    }
+    Object.values(photosMap).forEach(function(arr) {
+      arr.sort(function(a, b) { return a.index - b.index; });
     });
   }
-  // PhotoIndex 기준 정렬
-  Object.values(photosMap).forEach(function(arr) {
-    arr.sort(function(a, b) { return a.index - b.index; });
-  });
 
   const notes = [];
   for (let i = 1; i < notesData.length; i++) {
@@ -137,21 +136,60 @@ function getNotesFromSheet(itemId) {
         id: notesData[i][1],
         status: notesData[i][2],
         memo: notesData[i][3],
-        photos: (photosMap[nid] || []).map(function(p) {
-          return { data: p.data, name: p.name };
-        }),
-        date: notesData[i][5]
+        photos: includePhotos
+          ? (photosMap[nid] || []).map(function(p) { return { data: p.data, name: p.name }; })
+          : [],
+        date: notesData[i][4]
       });
     }
   }
   return notes;
 }
 
+/**
+ * 메인 시트("설문지 응답 시트1")의 "상태" 컬럼을 업데이트합니다.
+ * itemId는 1-based 데이터 행 번호 (헤더 포함 시 +1이 실제 시트 행).
+ * 삭제 시에는 호출하지 않습니다.
+ */
+function syncStatusToMainSheet(itemId, newStatus) {
+  if (!newStatus) return;
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const mainSheet = ss.getSheets()[0]; // 설문지 응답 시트1 (첫 번째 시트)
+    const headers = mainSheet.getRange(1, 1, 1, mainSheet.getLastColumn()).getValues()[0];
+
+    // "상태" 컬럼 위치 탐색 (1-based)
+    let statusCol = -1;
+    for (let i = 0; i < headers.length; i++) {
+      if (headers[i] && String(headers[i]).includes('상태')) {
+        statusCol = i + 1;
+        break;
+      }
+    }
+    if (statusCol === -1) {
+      Logger.log('syncStatusToMainSheet: "상태" 컬럼을 찾을 수 없습니다.');
+      return;
+    }
+
+    // itemId는 데이터 행 1-based → 시트 행 = itemId + 1 (헤더 행 제외)
+    const sheetRow = parseInt(itemId) + 1;
+    if (sheetRow < 2 || sheetRow > mainSheet.getLastRow()) {
+      Logger.log('syncStatusToMainSheet: 유효하지 않은 행 번호 ' + sheetRow);
+      return;
+    }
+
+    mainSheet.getRange(sheetRow, statusCol).setValue(newStatus);
+    Logger.log('syncStatusToMainSheet: 행 ' + sheetRow + ' 상태 → ' + newStatus);
+  } catch (err) {
+    Logger.log('syncStatusToMainSheet 오류: ' + err.toString());
+  }
+}
+
 function addNoteToSheet(note) {
   const notesSheet = getNotesSheet();
   const photosSheet = getPhotosDataSheet();
 
-  // 사진을 PhotosData 시트에 한 행씩 저장 (DriveApp 불필요)
+  // 사진 → PhotosData 시트에 한 행씩 저장
   if (note.photos && note.photos.length > 0) {
     note.photos.forEach(function(photo, idx) {
       if (photo && photo.data) {
@@ -165,15 +203,20 @@ function addNoteToSheet(note) {
     });
   }
 
-  // Notes 시트에 메모 저장 (Photos 열은 호환용 빈 배열)
+  // Notes 시트 저장 (5컬럼, Photos 없음)
   notesSheet.appendRow([
     note.itemId,
     note.id,
     note.status || '',
     note.memo || '',
-    '[]',
     note.date
   ]);
+
+  // 상태 변경이 있으면 메인 시트("설문지 응답 시트1")의 "상태" 컬럼도 동기화
+  // (삭제 시에는 호출 안 함 → 메인 시트 값 유지)
+  if (note.status) {
+    syncStatusToMainSheet(note.itemId, note.status);
+  }
 
   return { success: true, photoErrors: [] };
 }
@@ -188,7 +231,7 @@ function deleteNoteFromSheet(itemId, noteId) {
     }
   }
 
-  // PhotosData 시트에서 해당 NoteID 사진 모두 삭제
+  // PhotosData 시트에서 해당 NoteID 사진 삭제
   const photosSheet = getPhotosDataSheet();
   const photosData = photosSheet.getDataRange().getValues();
   for (let j = photosData.length - 1; j >= 1; j--) {
