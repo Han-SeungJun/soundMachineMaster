@@ -118,6 +118,9 @@ function doPost(e) {
     if (action === 'addNote') {
       return ContentService.createTextOutput(JSON.stringify(addNoteToSheet(params.note)))
         .setMimeType(ContentService.MimeType.JSON);
+    } else if (action === 'updateItem') {
+      return ContentService.createTextOutput(JSON.stringify(updateItemInSheet(params.itemId, params.fields)))
+        .setMimeType(ContentService.MimeType.JSON);
     } else if (action === 'deleteNote') {
       return ContentService.createTextOutput(JSON.stringify(deleteNoteFromSheet(params.itemId, params.noteId)))
         .setMimeType(ContentService.MimeType.JSON);
@@ -284,6 +287,57 @@ function syncStatusToMainSheet(itemId, newStatus) {
     Logger.log('상태 동기화: 행 ' + targetRow + ' → ' + newStatus);
   } catch (err) {
     Logger.log('syncStatusToMainSheet 오류: ' + err.toString());
+  }
+}
+
+/**
+ * 메인 시트의 장비 행 필드를 업데이트합니다.
+ * @param {string|number} itemId - 장비 ID
+ * @param {Object} fields - 업데이트할 필드 { name, category, status, location, user, purpose, department }
+ */
+function updateItemInSheet(itemId, fields) {
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const mainSheet = ss.getSheets()[0];
+    const headers = mainSheet.getRange(1, 1, 1, mainSheet.getLastColumn()).getValues()[0];
+
+    const targetRow = findSheetRowByItemId(mainSheet, itemId);
+    if (targetRow === -1) return { success: false, error: '해당 장비 행을 찾을 수 없습니다.' };
+
+    // 헤더명 → 컬럼 인덱스 맵 구성
+    const colMap = {};
+    headers.forEach(function(h, i) {
+      if (h) colMap[String(h).trim()] = i + 1;
+    });
+
+    const fieldMap = {
+      name:       '장비명',
+      category:   '카테고리',
+      status:     '상태',
+      location:   '위치',
+      user:       '사용자 (실 사용자 혹은 담당교역자)',
+      purpose:    '사용 목적',
+      department: '사용 부서'
+    };
+
+    Object.keys(fields).forEach(function(key) {
+      var headerName = fieldMap[key];
+      if (!headerName) return;
+      // 헤더명 완전 일치 우선, 없으면 includes 방식으로 fallback
+      var col = colMap[headerName];
+      if (!col) {
+        for (var h in colMap) {
+          if (h.includes(key === 'user' ? '사용자' : headerName)) { col = colMap[h]; break; }
+        }
+      }
+      if (col) mainSheet.getRange(targetRow, col).setValue(fields[key] || '');
+    });
+
+    Logger.log('장비 수정 완료: 행 ' + targetRow + ', itemId=' + itemId);
+    return { success: true };
+  } catch (err) {
+    Logger.log('updateItemInSheet 오류: ' + err.toString());
+    return { success: false, error: err.toString() };
   }
 }
 
