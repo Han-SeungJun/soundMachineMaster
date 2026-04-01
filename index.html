@@ -1883,12 +1883,9 @@
                 </div>
                 <select class="filter-select" id="categoryFilter" onchange="filterInventory()">
                     <option value="all">모든 카테고리</option>
-                    <option value="Speaker">스피커</option>
-                    <option value="Microphone">마이크</option>
-                    <option value="Mixer">믹서</option>
-                    <option value="Cable">케이블</option>
-                    <option value="사진">사진</option>
+                    <option value="음향">음향</option>
                     <option value="영상">영상</option>
+                    <option value="사진">사진</option>
                     <option value="기타">기타</option>
                 </select>
                 <select class="filter-select" id="locationFilter" onchange="filterInventory()">
@@ -2377,10 +2374,7 @@
     function getIconByCategory(category) {
         if (!category) return 'fa-box';
         const c = category.toLowerCase();
-        if (c.includes('스피커') || c.includes('speaker')) return 'fa-volume-high';
-        if (c.includes('마이크') || c.includes('mic')) return 'fa-microphone';
-        if (c.includes('믹서') || c.includes('mixer')) return 'fa-sliders';
-        if (c.includes('케이블') || c.includes('cable')) return 'fa-link';
+        if (c.includes('음향') || c.includes('스피커') || c.includes('speaker') || c.includes('마이크') || c.includes('mic') || c.includes('믹서') || c.includes('mixer') || c.includes('케이블') || c.includes('cable')) return 'fa-volume-high';
         if (c.includes('사진') || c.includes('photo') || c.includes('camera')) return 'fa-camera';
         if (c.includes('영상') || c.includes('video') || c.includes('film')) return 'fa-video';
         return 'fa-box';
@@ -3075,7 +3069,7 @@
         if (!item) return;
         sheetEditItemId = itemId;
 
-        const categoryOptions = ['스피커', '마이크', '믹서', '케이블', '사진', '영상', '기타'];
+        const categoryOptions = ['음향', '영상', '사진', '기타'];
         const statusOptions = ['가용', '대여중', '수리중', '문제발견', '분실'];
 
         const fields = [
