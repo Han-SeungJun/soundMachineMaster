@@ -1821,9 +1821,9 @@
                     </select>
                     <span class="result-count" id="result-count">0건</span>
                     <div class="view-toggle">
-                        <button class="vbtn on" id="vbtn-grid" onclick="toggleView('grid')" title="그리드 보기"><i
-                                class="fas fa-grid-2"></i></button>
-                        <button class="vbtn" id="vbtn-list" onclick="toggleView('list')" title="목록 보기"><i
+                        <button class="vbtn" id="vbtn-grid" onclick="toggleView('grid')" title="그리드 보기"><i
+                                class="fas fa-table-cells"></i></button>
+                        <button class="vbtn on" id="vbtn-list" onclick="toggleView('list')" title="목록 보기"><i
                                 class="fas fa-list"></i></button>
                     </div>
                 </div>
@@ -1948,7 +1948,7 @@
     let inventoryData = [];
 
     let currentSelectedId = null;
-    let currentView = 'grid'; // 'grid' | 'list'
+    let currentView = 'list'; // 'grid' | 'list'
     let currentStatusPill = 'all';
     let localPhotoDataUrls = [];
     let pendingNotes = {};    // { [itemId]: [note,...] } — 저장 후 gviz 캐시 반영 전 임시 보관
@@ -2525,7 +2525,7 @@
         const area = document.getElementById('notesHistoryArea');
         if (!area) return;
 
-        // 1. Apps Script doGet으로 Notes + PhotosData 통합 조회 (사진 포함)
+        // 1단계: 사진 제외 노트 텍스트만 빠르게 조회 (includePhotos 없음)
         let sheetNotes = [];
         try {
             const res = await fetch(GOOGLE_WEBAPP_URL + '?action=getNotes&itemId=' + encodeURIComponent(id));
@@ -2537,30 +2537,36 @@
             }
         } catch (e) { console.warn('Notes fetch failed:', e); }
 
-        // 2. 삭제된 항목 필터링
         sheetNotes = sheetNotes.filter(n => !deletedNoteIds.has(String(n.id)));
+        const sheetNoteIds = new Set(sheetNotes.map(n => String(n.id)));
 
-        // 3. pending 노트 병합 (저장 직후 서버 반영 전 즉시 표시)
         const pending = (pendingNotes[id] || []).filter(
             pn => !sheetNotes.some(sn => String(sn.id) === String(pn.id)) && !deletedNoteIds.has(String(pn.id))
         );
         const notes = [...sheetNotes, ...pending];
 
-        // 뱃지 카운트 캐시 갱신
         localStorage.setItem(`noteCount_${id}`, notes.length);
-
         if (notes.length === 0) { area.innerHTML = ''; return; }
 
         const items = notes.slice().sort((a, b) => b.id - a.id).map(note => {
             const statusHtml = note.status ? `<span class="status-tag ${getStatusClass(note.status)}" style="font-size:10.5px;">${escapeHtml(note.status)}</span>` : '';
             const memoHtml = note.memo ? `<div class="note-memo">${escapeHtml(note.memo)}</div>` : '';
-            const photosHtml = note.photos?.length > 0
-                ? `<div class="note-photos">${note.photos.map(p => {
-                    const src = (p && typeof p === 'object') ? (p.data || '') : (p || '');
-                    const name = (p && typeof p === 'object') ? (p.name || '') : '';
-                    return src ? `<img src="${src}" onclick="showImageModal(this.src)" title="${escapeHtml(name) || '클릭하면 크게 보기'}">` : '';
-                }).filter(Boolean).join('')}</div>`
-                : '';
+
+            let photosHtml;
+            if (sheetNoteIds.has(String(note.id))) {
+                // 시트 노트: 사진 영역 플레이스홀더 (백그라운드로 나중에 채워짐)
+                photosHtml = `<div class="note-photos-area" data-noteid="${note.id}"></div>`;
+            } else {
+                // pending 노트: 방금 저장한 것이므로 즉시 표시
+                photosHtml = note.photos?.length > 0
+                    ? `<div class="note-photos-area" data-noteid="${note.id}"><div class="note-photos">${note.photos.map(p => {
+                        const src = (p && typeof p === 'object') ? (p.data || '') : (p || '');
+                        const name = (p && typeof p === 'object') ? (p.name || '') : '';
+                        return src ? `<img src="${src}" onclick="showImageModal(this.src)" title="${escapeHtml(name) || '클릭하면 크게 보기'}">` : '';
+                    }).filter(Boolean).join('')}</div></div>`
+                    : `<div class="note-photos-area" data-noteid="${note.id}"></div>`;
+            }
+
             return `
                 <div class="note-item">
                     <div class="note-item-header">
@@ -2581,6 +2587,30 @@
                 </div>
                 ${items}
             </div>`;
+
+        // 2단계: 사진만 백그라운드로 조회하여 플레이스홀더에 채우기 (모달이 열려 있는 동안만)
+        if (sheetNotes.length > 0) {
+            loadPhotosInBackground(id);
+        }
+    }
+
+    async function loadPhotosInBackground(id) {
+        try {
+            const res = await fetch(GOOGLE_WEBAPP_URL + '?action=getNotes&itemId=' + encodeURIComponent(id) + '&includePhotos=true');
+            if (!res.ok) return;
+            const data = await res.json();
+            if (!Array.isArray(data)) return;
+            data.forEach(note => {
+                const area = document.querySelector(`.note-photos-area[data-noteid="${note.id}"]`);
+                if (!area || !note.photos?.length) return;
+                const imgs = note.photos.map(p => {
+                    const src = (p && typeof p === 'object') ? (p.data || '') : (p || '');
+                    const name = (p && typeof p === 'object') ? (p.name || '') : '';
+                    return src ? `<img src="${src}" onclick="showImageModal(this.src)" title="${escapeHtml(name) || '클릭하면 크게 보기'}">` : '';
+                }).filter(Boolean).join('');
+                if (imgs) area.innerHTML = `<div class="note-photos">${imgs}</div>`;
+            });
+        } catch (e) { console.warn('Photo background load failed:', e); }
     }
 
     function showImageModal(src) {
