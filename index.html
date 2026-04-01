@@ -1698,7 +1698,7 @@
             </div>
 
             <div id="issueBanner" class="issue-banner" style="display:none;"
-                onclick="filterByStatusPill('문제발견', Array.from(document.querySelectorAll('.spill')).find(e=>e.textContent.trim()==='문제발견'))">
+                onclick="filterByIssueBanner()">
                 <i class="fas fa-triangle-exclamation"></i>
                 <span>수리 중이거나 문제가 발견된 장비가 <strong id="issueCount">0</strong>건 있습니다. 확인이 필요합니다.</span>
                 <i class="fas fa-chevron-right" style="margin-left:auto; color:#94a3b8;"></i>
@@ -1938,12 +1938,12 @@
     const NOTES_SHEET_URL = _SID ? `https://docs.google.com/spreadsheets/d/${_SID}/gviz/tq?tqx=out:json&sheet=Notes` : '';
 
     const LOCATIONS = [
-        "지하 1층 리바이벌 성전", "1층 유치부실", "1층 다윗의 장막",
+        "B1층 리바이벌 성전", "1층 유치부실", "1층 다윗의 장막",
         "1층 새가족1실", "1층 새가족2실", "2층 웨일즈성전", "2층 아주사성전",
-        "2층 유아예배실", "2층 영아예배실", "3층 본당", "6층 존웨슬리홀", "방재실"
+        "2층 유아예배실", "2층 영아예배실", "3/4층 본당", "6층 존웨슬리홀", "방재실"
     ];
 
-    const DEPARTMENTS = ["예배팀", "방송팀", "유치부", "중고등부", "청년부", "사사모 영상팀", "본팀 음향팀"];
+    const DEPARTMENTS = ["방재실", "유치부 영상음향팀", "유초등부 영상음향팀", "중고등부 영상음향팀", "청년부 영상팀", "청년부 음향팀", "사사모 영상팀", "사사모 음향팀", "본팀 영상팀", "본팀 음향팀"];
 
     let inventoryData = [];
 
@@ -2168,7 +2168,8 @@
         let data = inventoryData.filter(item => {
             const matchSearch = item.name.toLowerCase().includes(search) || item.category.toLowerCase().includes(search);
             const matchCat = cat === 'all' || item.category === cat;
-            const matchStat = currentStatusPill === 'all' || item.status === currentStatusPill;
+            const matchStat = currentStatusPill === 'all'
+                || (Array.isArray(currentStatusPill) ? currentStatusPill.includes(item.status) : item.status === currentStatusPill);
             const matchLoc = loc === 'all' || item.location === loc;
             const matchDep = dep === 'all' || item.department === dep;
             return matchSearch && matchCat && matchStat && matchLoc && matchDep;
@@ -2192,10 +2193,22 @@
     }
 
     function filterByStatusPill(status, el) {
-        currentStatusPill = status;
+        currentStatusPill = status; // 단일 문자열 ('all' 포함)
         document.querySelectorAll('.spill').forEach(b => b.classList.remove('on'));
         if (el) el.classList.add('on');
-        // Switch to inventory if on dashboard
+        if (document.getElementById('inventory-section').style.display === 'none') {
+            showSection('inventory', document.querySelectorAll('.nav-item')[1]);
+        }
+        filterInventory();
+    }
+
+    // 배너 클릭: "수리중" + "문제발견" 동시 OR 필터
+    function filterByIssueBanner() {
+        const issueStatuses = ['수리중', '문제발견'];
+        currentStatusPill = issueStatuses;
+        document.querySelectorAll('.spill').forEach(b => {
+            b.classList.toggle('on', issueStatuses.includes(b.textContent.trim()));
+        });
         if (document.getElementById('inventory-section').style.display === 'none') {
             showSection('inventory', document.querySelectorAll('.nav-item')[1]);
         }
@@ -2357,6 +2370,7 @@
 
     function closeModal() {
         document.getElementById('gearModal').classList.remove('active');
+        currentSelectedId = null;
     }
 
     // ═══ NOTE SYSTEM ═══
@@ -2675,15 +2689,35 @@
         if (!pw) return;
         const hashed = await hashPassword(pw);
         const target = 'daa35e4f1a0e43def76e13a948cbda05be2569901fa0c6d5d6342fb2bdc85028';
-        if (hashed === target) {
-            inventoryData = inventoryData.filter(i => i.id !== currentSelectedId);
-            filterInventory(); updateStats(); initDashboard();
-            if (document.getElementById('stats-section').style.display === 'block') initStats();
-            closeModal();
-            showNotification('장비가 삭제되었습니다.', 'success');
-        } else {
+        if (hashed !== target) {
             showNotification('비밀번호가 일치하지 않습니다.', 'error');
+            return;
         }
+        // Google Sheets에서 실제 행 삭제
+        try {
+            const resp = await fetch(GOOGLE_WEBAPP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: 'deleteItem', itemId: currentSelectedId })
+            });
+            if (!resp.ok) throw new Error('서버 오류: ' + resp.status);
+            const result = await resp.json();
+            if (result && result.error) throw new Error(result.error);
+        } catch (e) {
+            showNotification('삭제 실패: ' + e.message, 'error');
+            return;
+        }
+        inventoryData = inventoryData.filter(i => i.id !== currentSelectedId);
+
+        // 삭제된 장비의 메모리 데이터 정리 (오염 방지)
+        const deletedId = currentSelectedId;
+        delete pendingNotes[deletedId];
+        localStorage.removeItem(`noteCount_${deletedId}`);
+
+        filterInventory(); updateStats(); initDashboard();
+        if (document.getElementById('stats-section').style.display === 'block') initStats();
+        closeModal(); // closeModal 내부에서 currentSelectedId = null 처리됨
+        showNotification('장비가 삭제되었습니다.', 'success');
     }
 
     // ═══ STATS PAGE ═══
@@ -2785,7 +2819,7 @@
             const rows = json.table.rows;
 
             const data = rows.map((row, idx) => {
-                let obj = { id: idx + 1, icon: 'fa-box', editUrl: '-' };
+                let obj = { id: null, icon: 'fa-box', editUrl: '-' };
                 row.c.forEach((cell, i) => {
                     if (!cell) return;
                     let val = cell.v;
@@ -2796,19 +2830,37 @@
                     else if (h.includes('카테고리')) { obj.category = val; obj.icon = getIconByCategory(val); }
                     else if (h.includes('상태')) obj.status = val;
                     else if (h.includes('위치')) obj.location = val;
-                    else if (h.includes('사용자')) obj.user = val;
+                    else if (h.includes('사용자 (실 사용자 혹은 담당교역자)')) obj.user = val;
                     else if (h.includes('목적')) obj.purpose = val;
                     else if (h.includes('부서')) obj.department = val;
-                    else if (h.includes('타임스탬프') || h.includes('날짜')) {
+                    else if (h === '타임스탬프') {
+                        // ※ '사용 날짜' 컬럼(h.includes('날짜'))과 혼동하지 않도록 정확히 '타임스탬프'만 매칭
+                        // 폼 제출 타임스탬프 → 16자리 고유 ID 생성 (PPYYYYMMDDHHMMSS)
+                        // gviz 날짜 형식: "Date(2024,0,15,14,30,0)" (월은 0-based)
+                        if (cell.v && typeof cell.v === 'string' && cell.v.startsWith('Date(')) {
+                            const p = cell.v.slice(5, -1).split(',').map(Number);
+                            const tsStr =
+                                String(p[0]) +
+                                String(p[1] + 1).padStart(2, '0') +
+                                String(p[2]).padStart(2, '0') +
+                                String(p[3] || 0).padStart(2, '0') +
+                                String(p[4] || 0).padStart(2, '0') +
+                                String(p[5] || 0).padStart(2, '0');
+                            // 앞 2자리: 타임스탬프 각 자릿수 합 % 100 (결정론적, 페이지 새로고침해도 동일)
+                            const digitSum = tsStr.split('').reduce((a, c) => a + Number(c), 0);
+                            const prefix = String(digitSum % 100).padStart(2, '0');
+                            obj.id = parseInt(prefix + tsStr); // 16자리 ID
+                        }
                         obj.date = cell.f || val;
                         if (obj.date && typeof obj.date === 'string') {
                             const dm = obj.date.match(/^(20\d{2}[\.\-\/] ?\d{1,2}[\.\-\/] ?\d{1,2})/);
                             if (dm) obj.date = dm[1];
                         }
                     }
-                    else if (h.includes('링크') || h.includes('수정') || h.includes('edit')) obj.editUrl = val;
+                    else if (h === '수정 링크' || h.includes('edit url')) obj.editUrl = val;
                 });
 
+                if (!obj.id) obj.id = idx + 1; // 타임스탬프 없을 때 fallback
                 if (!obj.name) obj.name = '-';
                 if (!obj.category) obj.category = '기타';
                 if (!obj.status) obj.status = '-';
