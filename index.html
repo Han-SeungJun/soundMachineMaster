@@ -1,6 +1,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>사랑하는교회 | 음향기기 관리대장</title>
+<title>사랑하는교회 장비관리대장</title>
 <style>
     :root {
         --primary: #6366f1;
@@ -1624,86 +1624,231 @@
 
     /* ── Sheet Admin ─────────────────────────────────── */
     .sheet-admin-btn {
-        display: inline-flex; align-items: center; gap: 8px;
-        padding: 8px 18px; border-radius: 8px; border: 1.5px solid var(--primary);
-        background: transparent; color: var(--primary); font-size: 13px;
-        font-weight: 600; cursor: pointer; transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 18px;
+        border-radius: 8px;
+        border: 1.5px solid var(--primary);
+        background: transparent;
+        color: var(--primary);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
     }
-    .sheet-admin-btn:hover { background: var(--primary); color: #fff; }
-    .sheet-admin-btn.unlocked { background: #10b981; border-color: #10b981; color: #fff; }
-    .sheet-admin-btn.unlocked:hover { background: #059669; border-color: #059669; }
 
-    .sheet-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .sheet-admin-btn:hover {
+        background: var(--primary);
+        color: #fff;
+    }
+
+    .sheet-admin-btn.unlocked {
+        background: #10b981;
+        border-color: #10b981;
+        color: #fff;
+    }
+
+    .sheet-admin-btn.unlocked:hover {
+        background: #059669;
+        border-color: #059669;
+    }
+
+    .sheet-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
     .sheet-table th {
-        background: #f8fafc; color: var(--text-muted); font-size: 11.5px;
-        font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
-        padding: 10px 14px; text-align: left; border-bottom: 1.5px solid #e8edf5;
+        background: #f8fafc;
+        color: var(--text-muted);
+        font-size: 11.5px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 10px 14px;
+        text-align: left;
+        border-bottom: 1.5px solid #e8edf5;
         white-space: nowrap;
     }
+
     .sheet-table td {
-        padding: 11px 14px; border-bottom: 1px solid #f1f5f9;
-        color: var(--text-main); vertical-align: middle;
+        padding: 11px 14px;
+        border-bottom: 1px solid #f1f5f9;
+        color: var(--text-main);
+        vertical-align: middle;
     }
-    .sheet-table tbody tr:hover { background: #f8fafc; }
-    .sheet-table tbody tr:last-child td { border-bottom: none; }
+
+    .sheet-table tbody tr:hover {
+        background: #f8fafc;
+    }
+
+    .sheet-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
     .sheet-edit-btn {
-        display: inline-flex; align-items: center; gap: 5px;
-        padding: 5px 12px; border-radius: 6px; border: 1.5px solid var(--primary);
-        background: transparent; color: var(--primary); font-size: 12px;
-        font-weight: 600; cursor: pointer; transition: all 0.15s;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 12px;
+        border-radius: 6px;
+        border: 1.5px solid var(--primary);
+        background: transparent;
+        color: var(--primary);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
     }
-    .sheet-edit-btn:hover { background: var(--primary); color: #fff; }
+
+    .sheet-edit-btn:hover {
+        background: var(--primary);
+        color: #fff;
+    }
+
     .sheet-del-btn {
-        display: inline-flex; align-items: center;
-        padding: 5px 10px; border-radius: 6px; border: 1.5px solid #ef4444;
-        background: transparent; color: #ef4444; font-size: 12px;
-        cursor: pointer; transition: all 0.15s;
+        display: inline-flex;
+        align-items: center;
+        padding: 5px 10px;
+        border-radius: 6px;
+        border: 1.5px solid #ef4444;
+        background: transparent;
+        color: #ef4444;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.15s;
     }
-    .sheet-del-btn:hover { background: #ef4444; color: #fff; }
+
+    .sheet-del-btn:hover {
+        background: #ef4444;
+        color: #fff;
+    }
 
     /* Sheet Edit Modal */
     .sheet-edit-modal {
-        display: none; position: fixed; inset: 0; z-index: 3000;
-        background: rgba(15,23,42,0.55); backdrop-filter: blur(4px);
-        align-items: center; justify-content: center;
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 3000;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(4px);
+        align-items: center;
+        justify-content: center;
     }
-    .sheet-edit-modal.active { display: flex; }
+
+    .sheet-edit-modal.active {
+        display: flex;
+    }
+
     .sheet-edit-modal-box {
-        background: #fff; border-radius: 16px; width: 520px; max-width: 95vw;
-        max-height: 85vh; overflow-y: auto;
-        box-shadow: 0 24px 64px rgba(0,0,0,0.18);
+        background: #fff;
+        border-radius: 16px;
+        width: 520px;
+        max-width: 95vw;
+        max-height: 85vh;
+        overflow-y: auto;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
     }
+
     .sheet-modal-header {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 20px 24px 16px; border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px 16px;
+        border-bottom: 1px solid #f1f5f9;
     }
-    .sheet-modal-header h2 { font-size: 17px; font-weight: 700; color: var(--text-main); margin: 0; }
-    .sheet-modal-body { padding: 20px 24px; }
-    .edit-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
-    .edit-field label { font-size: 11.5px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
-    .edit-field input, .edit-field select {
-        padding: 9px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px;
-        font-size: 13.5px; color: var(--text-main); background: #f8fafc;
-        transition: border-color 0.15s; outline: none;
+
+    .sheet-modal-header h2 {
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0;
     }
-    .edit-field input:focus, .edit-field select:focus { border-color: var(--primary); background: #fff; }
+
+    .sheet-modal-body {
+        padding: 20px 24px;
+    }
+
+    .edit-field {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        margin-bottom: 14px;
+    }
+
+    .edit-field label {
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .edit-field input,
+    .edit-field select {
+        padding: 9px 12px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 13.5px;
+        color: var(--text-main);
+        background: #f8fafc;
+        transition: border-color 0.15s;
+        outline: none;
+    }
+
+    .edit-field input:focus,
+    .edit-field select:focus {
+        border-color: var(--primary);
+        background: #fff;
+    }
+
     .sheet-modal-footer {
-        display: flex; gap: 10px; justify-content: flex-end;
-        padding: 16px 24px; border-top: 1px solid #f1f5f9;
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        padding: 16px 24px;
+        border-top: 1px solid #f1f5f9;
     }
+
     .sheet-modal-save-btn {
-        padding: 9px 22px; border-radius: 8px; border: none;
-        background: var(--primary); color: #fff; font-size: 13.5px;
-        font-weight: 600; cursor: pointer; transition: background 0.15s;
+        padding: 9px 22px;
+        border-radius: 8px;
+        border: none;
+        background: var(--primary);
+        color: #fff;
+        font-size: 13.5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
     }
-    .sheet-modal-save-btn:hover { background: var(--primary-dark); }
-    .sheet-modal-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .sheet-modal-save-btn:hover {
+        background: var(--primary-dark);
+    }
+
+    .sheet-modal-save-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
     .sheet-modal-cancel-btn {
-        padding: 9px 18px; border-radius: 8px; border: 1.5px solid #e2e8f0;
-        background: #fff; color: var(--text-muted); font-size: 13.5px;
-        font-weight: 600; cursor: pointer; transition: all 0.15s;
+        padding: 9px 18px;
+        border-radius: 8px;
+        border: 1.5px solid #e2e8f0;
+        background: #fff;
+        color: var(--text-muted);
+        font-size: 13.5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
     }
-    .sheet-modal-cancel-btn:hover { border-color: var(--text-muted); color: var(--text-main); }
+
+    .sheet-modal-cancel-btn:hover {
+        border-color: var(--text-muted);
+        color: var(--text-main);
+    }
 </style>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -1718,8 +1863,8 @@
         <div class="logo-wrap">
             <div class="logo-icon"><i class="fas fa-wave-square"></i></div>
             <div class="logo-text">
-                사랑하는교회
-                <small>음향기기 관리대장</small>
+                사랑하는교회<br>
+                장비관리대장
             </div>
         </div>
 
@@ -1734,11 +1879,11 @@
             <a class="nav-item link-gear-register" target="_blank">
                 <i class="fas fa-plus-circle"></i><span>장비 등록</span>
             </a>
-            <a class="nav-item" onclick="showSection('stats', this)">
-                <i class="fas fa-chart-pie"></i><span>운용 통계</span>
-            </a>
             <a class="nav-item" onclick="showSection('sheet', this)">
                 <i class="fas fa-table-list"></i><span>시트 관리</span>
+            </a>
+            <a class="nav-item" onclick="showSection('stats', this)">
+                <i class="fas fa-chart-pie"></i><span>운용 통계</span>
             </a>
         </nav>
 
@@ -1783,8 +1928,7 @@
                 <p class="subtitle">전체 음향 장비의 운용 상태를 한눈에 파악하세요.</p>
             </div>
 
-            <div id="issueBanner" class="issue-banner" style="display:none;"
-                onclick="filterByIssueBanner()">
+            <div id="issueBanner" class="issue-banner" style="display:none;" onclick="filterByIssueBanner()">
                 <i class="fas fa-triangle-exclamation"></i>
                 <span>수리 중이거나 문제가 발견된 장비가 <strong id="issueCount">0</strong>건 있습니다. 확인이 필요합니다.</span>
                 <i class="fas fa-chevron-right" style="margin-left:auto; color:#94a3b8;"></i>
@@ -1946,7 +2090,8 @@
 
         <!-- ═══ SHEET ADMIN ═══ -->
         <section id="sheet-section" class="content-section" style="display:none;">
-            <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+            <div class="section-header"
+                style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
                 <div>
                     <h1>시트 관리</h1>
                     <p class="subtitle">스프레드시트 데이터를 직접 조회하고 편집합니다.</p>
@@ -3073,22 +3218,22 @@
         const statusOptions = ['가용', '대여중', '수리중', '문제발견', '분실'];
 
         const fields = [
-            { key: 'name',       label: '장비명',     type: 'text',   value: item.name },
-            { key: 'category',   label: '카테고리',   type: 'select', value: item.category,   options: categoryOptions },
-            { key: 'status',     label: '상태',       type: 'select', value: item.status,     options: statusOptions },
-            { key: 'location',   label: '위치',       type: 'text',   value: item.location },
-            { key: 'user',       label: '사용자',     type: 'text',   value: item.user },
-            { key: 'purpose',    label: '사용 목적',  type: 'text',   value: item.purpose },
-            { key: 'department', label: '사용 부서',  type: 'text',   value: item.department },
+            { key: 'name', label: '장비명', type: 'text', value: item.name },
+            { key: 'category', label: '카테고리', type: 'select', value: item.category, options: categoryOptions },
+            { key: 'status', label: '상태', type: 'select', value: item.status, options: statusOptions },
+            { key: 'location', label: '위치', type: 'text', value: item.location },
+            { key: 'user', label: '사용자', type: 'text', value: item.user },
+            { key: 'purpose', label: '사용 목적', type: 'text', value: item.purpose },
+            { key: 'department', label: '사용 부서', type: 'text', value: item.department },
         ];
 
         document.getElementById('sheetEditFields').innerHTML = fields.map(f => `
             <div class="edit-field">
                 <label>${f.label}</label>
                 ${f.type === 'select'
-                    ? `<select id="ef_${f.key}">${f.options.map(o => `<option value="${o}"${o === f.value ? ' selected' : ''}>${o}</option>`).join('')}</select>`
-                    : `<input type="text" id="ef_${f.key}" value="${(f.value || '').replace(/"/g, '&quot;')}">`
-                }
+                ? `<select id="ef_${f.key}">${f.options.map(o => `<option value="${o}"${o === f.value ? ' selected' : ''}>${o}</option>`).join('')}</select>`
+                : `<input type="text" id="ef_${f.key}" value="${(f.value || '').replace(/"/g, '&quot;')}">`
+            }
             </div>
         `).join('');
 
@@ -3107,12 +3252,12 @@
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...';
 
         const fields = {
-            name:       document.getElementById('ef_name').value.trim(),
-            category:   document.getElementById('ef_category').value,
-            status:     document.getElementById('ef_status').value,
-            location:   document.getElementById('ef_location').value.trim(),
-            user:       document.getElementById('ef_user').value.trim(),
-            purpose:    document.getElementById('ef_purpose').value.trim(),
+            name: document.getElementById('ef_name').value.trim(),
+            category: document.getElementById('ef_category').value,
+            status: document.getElementById('ef_status').value,
+            location: document.getElementById('ef_location').value.trim(),
+            user: document.getElementById('ef_user').value.trim(),
+            purpose: document.getElementById('ef_purpose').value.trim(),
             department: document.getElementById('ef_department').value.trim(),
         };
 
