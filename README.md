@@ -47,6 +47,36 @@
 ### 통계 (Statistics)
 - 상태별 분포(파이), 부서별 장비(레이더), 위치별 장비 수(바) 차트를 제공합니다.
 
+### 파일 구조
+
+```
+src/
+├── css/                      (1,764줄)
+│   ├── variables.css         # CSS 변수, 전역 리셋
+│   ├── layout.css            # 사이드바, 메인 레이아웃, 섹션
+│   ├── components.css        # 탑바, 버튼, 카드, 테이블, 상태태그
+│   ├── inventory.css         # 인벤토리 툴바, 기어카드, 리스트뷰
+│   ├── modal.css             # 모달 시스템, 노트, 히스토리
+│   ├── sheets.css            # 시트 관리 테이블, 편집 모달
+│   ├── toast.css             # 토스트 알림
+│   └── responsive.css        # 모바일 반응형, 프린트
+└── js/                       (1,514줄)
+    ├── config.js             # API URL, 상수 (LOCATIONS, DEPARTMENTS)
+    ├── state.js              # 전역 뮤터블 상태 변수
+    ├── utils.js              # 순수 함수 (getStatusClass, hashPassword 등)
+    ├── api.js                # Google Sheets 통신, 동기화
+    ├── app.js                # DOMContentLoaded 진입점
+    └── modules/
+        ├── toast.js          # 알림 UI
+        ├── navigation.js     # 섹션 전환
+        ├── inventory.js      # 필터링, 렌더링, 뷰 전환
+        ├── dashboard.js      # 대시보드, Chart.js
+        ├── notes.js          # 노트 저장/조회/삭제, 사진 압축
+        ├── modal.js          # 장비상세, Form, 히스토리, 이미지 모달
+        ├── stats.js          # 통계 카드, 3개 차트
+        └── sheet.js          # 시트 관리, CRUD, 삭제 인증
+```
+
 ### 데이터 흐름 구조
 
 ```

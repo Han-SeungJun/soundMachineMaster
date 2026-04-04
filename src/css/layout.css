@@ -1,0 +1,238 @@
+/* ═══ 레이아웃: 앱 컨테이너 / 사이드바 / 메인 / 섹션 ═══ */
+
+.app-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+    width: 256px;
+    background: linear-gradient(175deg, #1e2d40 0%, #0f172a 100%);
+    color: var(--text-on-dark);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 16px;
+    position: fixed;
+    height: 100vh;
+    z-index: 100;
+    overflow-y: auto;
+    border-right: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.logo-wrap {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 6px 4px 28px;
+}
+
+.logo-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.logo-text {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #f1f5f9;
+}
+
+.logo-text small {
+    display: block;
+    font-size: 10.5px;
+    font-weight: 400;
+    color: #475569;
+    margin-top: 1px;
+    letter-spacing: 0.2px;
+}
+
+.nav-label {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    padding: 0 8px;
+    margin: 16px 0 5px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 10px;
+    color: #64748b;
+    border-radius: 9px;
+    margin-bottom: 1px;
+    transition: var(--t);
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    position: relative;
+}
+
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #cbd5e1;
+}
+
+.nav-item.active {
+    background: rgba(99, 102, 241, 0.18);
+    color: #a5b4fc;
+}
+
+.nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 18px;
+    background: #818cf8;
+    border-radius: 0 3px 3px 0;
+}
+
+.nav-item i {
+    font-size: 15px;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.sidebar-bottom {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sync-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11.5px;
+    color: #334155;
+    padding: 7px 5px;
+}
+
+.sync-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #334155;
+    flex-shrink: 0;
+    transition: var(--t);
+}
+
+.sync-dot.synced {
+    background: #10b981;
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
+}
+
+.sync-dot.syncing {
+    background: #f59e0b;
+    animation: blink 1s infinite;
+}
+
+.sync-dot.error {
+    background: #ef4444;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1 }
+    50% { opacity: 0.3 }
+}
+
+/* ── Main Content ── */
+.main-content {
+    flex-grow: 1;
+    margin-left: 256px;
+    padding: 28px 32px;
+}
+
+/* ── Content Sections ── */
+.content-section {
+    animation: fadeUp 0.25s ease-out;
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.section-header {
+    margin-bottom: 22px;
+}
+
+.section-header h1 {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.8px;
+}
+
+.section-header .subtitle {
+    color: var(--text-muted);
+    font-size: 13.5px;
+    margin-top: 3px;
+}
+
+/* ── Dashboard Grid ── */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.dashboard-grid .card.wide {
+    grid-column: 1 / -1;
+}
+
+/* ── Stats Page Grid ── */
+.stats-page-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.stats-page-grid .card.wide {
+    grid-column: 1 / -1;
+}
+
+/* ── Issue Banner ── */
+.issue-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(239, 68, 68, 0.06);
+    border: 1.5px solid rgba(239, 68, 68, 0.15);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: var(--t);
+}
+
+.issue-banner:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.issue-banner i {
+    color: var(--accent-red);
+    font-size: 15px;
+}
+
+.issue-banner strong {
+    color: var(--accent-red);
+}

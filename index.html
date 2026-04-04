@@ -1,3317 +1,449 @@
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>사랑하는교회 장비관리대장</title>
-<style>
-    :root {
-        --primary: #6366f1;
-        --primary-light: #818cf8;
-        --primary-dark: #4f46e5;
-        --bg-main: #f1f5f9;
-        --bg-card: #ffffff;
-        --sidebar-bg: #0f172a;
-        --text-main: #0f172a;
-        --text-muted: #64748b;
-        --text-on-dark: #f8fafc;
-        --accent-purple: #a855f7;
-        --accent-blue: #3b82f6;
-        --accent-orange: #f59e0b;
-        --accent-red: #ef4444;
-        --accent-green: #10b981;
-        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.04);
-        --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
-        --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
-        --radius-sm: 8px;
-        --radius: 14px;
-        --radius-lg: 20px;
-        --t: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    body {
-        font-family: 'Pretendard', -apple-system, 'Segoe UI', sans-serif;
-        background: var(--bg-main);
-        color: var(--text-main);
-        overflow-x: hidden;
-        min-height: 100vh;
-    }
-
-    /* ═══ SIDEBAR ═══ */
-    .app-container {
-        display: flex;
-        min-height: 100vh;
-    }
-
-    .sidebar {
-        width: 256px;
-        background: linear-gradient(175deg, #1e2d40 0%, #0f172a 100%);
-        color: var(--text-on-dark);
-        display: flex;
-        flex-direction: column;
-        padding: 20px 16px;
-        position: fixed;
-        height: 100vh;
-        z-index: 100;
-        overflow-y: auto;
-        border-right: 1px solid rgba(255, 255, 255, 0.04);
-    }
-
-    .logo-wrap {
-        display: flex;
-        align-items: center;
-        gap: 11px;
-        padding: 6px 4px 28px;
-    }
-
-    .logo-icon {
-        width: 36px;
-        height: 36px;
-        background: linear-gradient(135deg, #6366f1, #a855f7);
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-        flex-shrink: 0;
-        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
-    }
-
-    .logo-text {
-        font-size: 13px;
-        font-weight: 700;
-        line-height: 1.4;
-        color: #f1f5f9;
-    }
-
-    .logo-text small {
-        display: block;
-        font-size: 10.5px;
-        font-weight: 400;
-        color: #475569;
-        margin-top: 1px;
-        letter-spacing: 0.2px;
-    }
-
-    .nav-label {
-        font-size: 9.5px;
-        font-weight: 700;
-        color: #334155;
-        text-transform: uppercase;
-        letter-spacing: 1.2px;
-        padding: 0 8px;
-        margin: 16px 0 5px;
-    }
-
-    .nav-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 10px;
-        color: #64748b;
-        border-radius: 9px;
-        margin-bottom: 1px;
-        transition: var(--t);
-        cursor: pointer;
-        text-decoration: none;
-        font-size: 13.5px;
-        font-weight: 500;
-        position: relative;
-    }
-
-    .nav-item:hover {
-        background: rgba(255, 255, 255, 0.06);
-        color: #cbd5e1;
-    }
-
-    .nav-item.active {
-        background: rgba(99, 102, 241, 0.18);
-        color: #a5b4fc;
-    }
-
-    .nav-item.active::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 3px;
-        height: 18px;
-        background: #818cf8;
-        border-radius: 0 3px 3px 0;
-    }
-
-    .nav-item i {
-        font-size: 15px;
-        width: 20px;
-        text-align: center;
-        flex-shrink: 0;
-    }
-
-    .sidebar-bottom {
-        margin-top: auto;
-        padding-top: 16px;
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .sync-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 11.5px;
-        color: #334155;
-        padding: 7px 5px;
-    }
-
-    .sync-dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: #334155;
-        flex-shrink: 0;
-        transition: var(--t);
-    }
-
-    .sync-dot.synced {
-        background: #10b981;
-        box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
-    }
-
-    .sync-dot.syncing {
-        background: #f59e0b;
-        animation: blink 1s infinite;
-    }
-
-    .sync-dot.error {
-        background: #ef4444;
-    }
-
-    @keyframes blink {
-
-        0%,
-        100% {
-            opacity: 1
-        }
-
-        50% {
-            opacity: 0.3
-        }
-    }
-
-    /* ═══ MAIN ═══ */
-    .main-content {
-        flex-grow: 1;
-        margin-left: 256px;
-        padding: 28px 32px;
-    }
-
-    /* ═══ TOPBAR ═══ */
-    .top-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 28px;
-        gap: 12px;
-    }
-
-    .search-wrap {
-        position: relative;
-        flex: 1;
-        max-width: 420px;
-    }
-
-    .search-icon {
-        position: absolute;
-        left: 14px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #94a3b8;
-        font-size: 13px;
-        pointer-events: none;
-    }
-
-    .search-shortcut-hint {
-        position: absolute;
-        right: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 10px;
-        color: #cbd5e1;
-        background: #f1f5f9;
-        padding: 2px 6px;
-        border-radius: 4px;
-        border: 1px solid #e2e8f0;
-        pointer-events: none;
-    }
-
-    .search-input {
-        width: 100%;
-        padding: 10px 48px 10px 40px;
-        border-radius: 11px;
-        border: 1.5px solid #e2e8f0;
-        background: white;
-        font-size: 13.5px;
-        font-family: inherit;
-        color: var(--text-main);
-        transition: var(--t);
-    }
-
-    .search-input:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-    }
-
-    .search-input::placeholder {
-        color: #94a3b8;
-    }
-
-    .header-actions {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-    }
-
-    .icon-btn {
-        width: 38px;
-        height: 38px;
-        border-radius: 9px;
-        border: 1.5px solid #e2e8f0;
-        background: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        color: var(--text-muted);
-        font-size: 14px;
-        transition: var(--t);
-        position: relative;
-    }
-
-    .icon-btn:hover {
-        border-color: var(--primary);
-        color: var(--primary);
-        background: rgba(99, 102, 241, 0.04);
-    }
-
-    .icon-btn.spinning i {
-        animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
-    }
-
-    .badge {
-        position: absolute;
-        top: -5px;
-        right: -5px;
-        background: var(--accent-red);
-        color: white;
-        font-size: 9.5px;
-        padding: 1px 5px;
-        border-radius: 10px;
-        border: 2px solid white;
-        min-width: 18px;
-        text-align: center;
-        font-weight: 700;
-    }
-
-    .primary-btn {
-        background: var(--primary);
-        color: white;
-        border: none;
-        padding: 9px 18px;
-        border-radius: 9px;
-        font-weight: 700;
-        font-size: 13.5px;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
-        transition: var(--t);
-        text-decoration: none;
-        white-space: nowrap;
-        font-family: inherit;
-    }
-
-    .primary-btn:hover {
-        background: var(--primary-dark);
-        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
-        transform: translateY(-1px);
-    }
-
-    .primary-btn:active {
-        transform: translateY(0);
-    }
-
-    /* ═══ SECTIONS ═══ */
-    .content-section {
-        animation: fadeUp 0.25s ease-out;
-    }
-
-    @keyframes fadeUp {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .section-header {
-        margin-bottom: 22px;
-    }
-
-    .section-header h1 {
-        font-size: 24px;
-        font-weight: 800;
-        letter-spacing: -0.8px;
-    }
-
-    .section-header .subtitle {
-        color: var(--text-muted);
-        font-size: 13.5px;
-        margin-top: 3px;
-    }
-
-    /* ═══ STAT CARDS ═══ */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 14px;
-        margin-bottom: 24px;
-    }
-
-    .stat-card {
-        background: white;
-        border-radius: var(--radius);
-        padding: 18px 20px;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        box-shadow: var(--shadow-sm);
-        border: 1px solid #f1f5f9;
-        transition: var(--t);
-        position: relative;
-        overflow: hidden;
-        cursor: default;
-    }
-
-    .stat-card:hover {
-        transform: translateY(-3px);
-        box-shadow: var(--shadow-lg);
-    }
-
-    .stat-card .bg-glow {
-        position: absolute;
-        right: -20px;
-        top: -20px;
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        opacity: 0.07;
-    }
-
-    .stat-icon {
-        width: 46px;
-        height: 46px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 19px;
-        flex-shrink: 0;
-        position: relative;
-        z-index: 1;
-    }
-
-    .stat-icon.purple {
-        background: rgba(168, 85, 247, 0.1);
-        color: #a855f7;
-    }
-
-    .stat-icon.green {
-        background: rgba(16, 185, 129, 0.1);
-        color: #10b981;
-    }
-
-    .stat-icon.orange {
-        background: rgba(245, 158, 11, 0.1);
-        color: #f59e0b;
-    }
-
-    .stat-icon.red {
-        background: rgba(239, 68, 68, 0.1);
-        color: #ef4444;
-    }
-
-    .stat-icon.blue {
-        background: rgba(59, 130, 246, 0.1);
-        color: #3b82f6;
-    }
-
-    .stat-data {
-        position: relative;
-        z-index: 1;
-    }
-
-    .stat-data .label {
-        font-size: 11.5px;
-        color: var(--text-muted);
-        font-weight: 600;
-    }
-
-    .stat-data h3 {
-        font-size: 30px;
-        font-weight: 800;
-        letter-spacing: -1.5px;
-        line-height: 1.1;
-        margin-top: 2px;
-    }
-
-    /* ═══ CARD ═══ */
-    .card {
-        background: white;
-        border-radius: var(--radius);
-        padding: 20px;
-        border: 1px solid #f1f5f9;
-        box-shadow: var(--shadow-sm);
-    }
-
-    .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 18px;
-    }
-
-    .card-header h3 {
-        font-size: 14.5px;
-        font-weight: 700;
-    }
-
-    .text-btn {
-        background: none;
-        border: none;
-        color: var(--primary);
-        font-weight: 600;
-        cursor: pointer;
-        font-size: 12.5px;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        font-family: inherit;
-    }
-
-    .text-btn:hover {
-        color: var(--primary-dark);
-    }
-
-    /* ═══ TABLE ═══ */
-    .table-container {
-        overflow-x: auto;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    th {
-        text-align: left;
-        padding: 9px 12px;
-        color: var(--text-muted);
-        font-weight: 700;
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.6px;
-        border-bottom: 1px solid #f1f5f9;
-        white-space: nowrap;
-    }
-
-    td {
-        padding: 12px 12px;
-        border-bottom: 1px solid #f8fafc;
-        font-size: 13.5px;
-    }
-
-    tbody tr {
-        transition: background 0.12s;
-        cursor: pointer;
-    }
-
-    tbody tr:hover {
-        background: #fafbff;
-    }
-
-    tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    /* ═══ STATUS TAGS ═══ */
-    .status-tag {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 3px 9px;
-        border-radius: 6px;
-        font-size: 11px;
-        font-weight: 700;
-        white-space: nowrap;
-    }
-
-    .status-tag::before {
-        content: '';
-        width: 5px;
-        height: 5px;
-        border-radius: 50%;
-        background: currentColor;
-        flex-shrink: 0;
-    }
-
-    .status-tag.available {
-        background: rgba(16, 185, 129, 0.1);
-        color: #059669;
-    }
-
-    .status-tag.in-use {
-        background: rgba(245, 158, 11, 0.1);
-        color: #d97706;
-    }
-
-    .status-tag.repair {
-        background: rgba(239, 68, 68, 0.1);
-        color: #dc2626;
-    }
-
-    .status-tag.issue {
-        background: rgba(220, 38, 38, 0.1);
-        color: #dc2626;
-    }
-
-    .status-tag.lost {
-        background: rgba(100, 116, 139, 0.12);
-        color: #475569;
-    }
-
-    /* ═══ DASHBOARD GRID ═══ */
-    .dashboard-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 14px;
-    }
-
-    .dashboard-grid .card.wide {
-        grid-column: 1 / -1;
-    }
-
-    /* ═══ INVENTORY TOOLBAR ═══ */
-    .inv-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 14px;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .inv-header h1 {
-        font-size: 24px;
-        font-weight: 800;
-        letter-spacing: -0.8px;
-    }
-
-    .inv-header .subtitle {
-        color: var(--text-muted);
-        font-size: 13px;
-        margin-top: 2px;
-    }
-
-    .inv-toolbar {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-bottom: 18px;
-    }
-
-    .filter-select {
-        padding: 7px 11px;
-        border-radius: 8px;
-        border: 1.5px solid #e2e8f0;
-        font-size: 12.5px;
-        font-family: inherit;
-        background: white;
-        color: var(--text-main);
-        cursor: pointer;
-        outline: none;
-        transition: var(--t);
-    }
-
-    .filter-select:focus {
-        border-color: var(--primary);
-    }
-
-    .status-pills {
-        display: flex;
-        gap: 5px;
-        flex-wrap: wrap;
-    }
-
-    .spill {
-        padding: 5px 13px;
-        border-radius: 20px;
-        border: 1.5px solid #e2e8f0;
-        font-size: 12px;
-        font-weight: 600;
-        background: white;
-        color: var(--text-muted);
-        cursor: pointer;
-        transition: var(--t);
-    }
-
-    .spill:hover {
-        border-color: var(--primary);
-        color: var(--primary);
-    }
-
-    .spill.on {
-        background: var(--primary);
-        border-color: var(--primary);
-        color: white;
-    }
-
-    .toolbar-right {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        margin-left: auto;
-    }
-
-    .result-count {
-        font-size: 12.5px;
-        color: var(--text-muted);
-        font-weight: 600;
-        white-space: nowrap;
-    }
-
-    .view-toggle {
-        display: flex;
-        border: 1.5px solid #e2e8f0;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-
-    .vbtn {
-        padding: 6px 10px;
-        background: white;
-        border: none;
-        cursor: pointer;
-        color: var(--text-muted);
-        font-size: 13px;
-        transition: var(--t);
-    }
-
-    .vbtn.on {
-        background: var(--primary);
-        color: white;
-    }
-
-    .vbtn:hover:not(.on) {
-        background: #f8fafc;
-    }
-
-    /* ═══ GEAR CARDS GRID ═══ */
-    .inventory-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 14px;
-    }
-
-    .gear-card {
-        background: white;
-        border-radius: var(--radius);
-        overflow: hidden;
-        box-shadow: var(--shadow-sm);
-        border: 1.5px solid #f1f5f9;
-        transition: var(--t);
-        cursor: pointer;
-        position: relative;
-    }
-
-    .gear-card:hover {
-        transform: translateY(-5px);
-        box-shadow: var(--shadow-lg);
-        border-color: #e0e7ff;
-    }
-
-    .gear-accent {
-        height: 3px;
-        width: 100%;
-    }
-
-    .gear-accent.available {
-        background: linear-gradient(90deg, #10b981, #34d399);
-    }
-
-    .gear-accent.in-use {
-        background: linear-gradient(90deg, #f59e0b, #fbbf24);
-    }
-
-    .gear-accent.repair {
-        background: linear-gradient(90deg, #ef4444, #f87171);
-    }
-
-    .gear-accent.issue {
-        background: linear-gradient(90deg, #dc2626, #f87171);
-    }
-
-    .gear-accent.default {
-        background: linear-gradient(90deg, #cbd5e1, #94a3b8);
-    }
-
-    .gear-icon-area {
-        height: 100px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 34px;
-        color: rgba(255, 255, 255, 0.92);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .gear-icon-area i {
-        position: relative;
-        z-index: 1;
-    }
-
-    .speaker-bg {
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    }
-
-    .mic-bg {
-        background: linear-gradient(135deg, #3b82f6, #06b6d4);
-    }
-
-    .mixer-bg {
-        background: linear-gradient(135deg, #10b981, #059669);
-    }
-
-    .cable-bg {
-        background: linear-gradient(135deg, #f59e0b, #d97706);
-    }
-
-    .camera-bg {
-        background: linear-gradient(135deg, #ec4899, #f43f5e);
-    }
-
-    .video-bg {
-        background: linear-gradient(135deg, #ef4444, #f97316);
-    }
-
-    .default-bg {
-        background: linear-gradient(135deg, #64748b, #475569);
-    }
-
-    .gear-note-dot {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        width: 20px;
-        height: 20px;
-        background: #f59e0b;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 9px;
-        color: white;
-        font-weight: 800;
-        z-index: 2;
-        border: 2px solid white;
-    }
-
-    .gear-status-overlay {
-        position: absolute;
-        bottom: 8px;
-        right: 8px;
-        z-index: 2;
-    }
-
-    .gear-body {
-        padding: 13px 15px 15px;
-    }
-
-    .gear-cat {
-        font-size: 10px;
-        font-weight: 700;
-        color: var(--primary);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 3px;
-    }
-
-    .gear-name {
-        font-size: 15px;
-        font-weight: 700;
-        margin-bottom: 10px;
-        line-height: 1.3;
-    }
-
-    .gear-meta {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .gear-meta-row {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 12px;
-        color: var(--text-muted);
-    }
-
-    .gear-meta-row i {
-        width: 13px;
-        color: #cbd5e1;
-        font-size: 10.5px;
-    }
-
-    /* ═══ LIST VIEW ═══ */
-    .list-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .list-table th {
-        font-size: 10.5px;
-        padding: 9px 14px;
-    }
-
-    .list-table td {
-        padding: 11px 14px;
-        vertical-align: middle;
-    }
-
-    .name-cell {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .mini-icon {
-        width: 32px;
-        height: 32px;
-        border-radius: 7px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 13px;
-        color: white;
-        flex-shrink: 0;
-    }
-
-    .list-note-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 3px;
-        background: rgba(245, 158, 11, 0.12);
-        color: #d97706;
-        font-size: 10.5px;
-        font-weight: 700;
-        padding: 2px 7px;
-        border-radius: 5px;
-    }
-
-    /* ═══ EMPTY STATE ═══ */
-    .empty-state {
-        text-align: center;
-        padding: 56px 20px;
-        color: var(--text-muted);
-    }
-
-    .empty-state i {
-        font-size: 44px;
-        color: #e2e8f0;
-        margin-bottom: 14px;
-        display: block;
-    }
-
-    .empty-state h3 {
-        font-size: 15px;
-        font-weight: 700;
-        color: var(--text-main);
-        margin-bottom: 5px;
-    }
-
-    .empty-state p {
-        font-size: 13.5px;
-    }
-
-    /* ═══ MODAL ═══ */
-    .modal-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 23, 42, 0.5);
-        backdrop-filter: blur(5px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.22s ease;
-        z-index: 2000;
-        padding: 16px;
-    }
-
-    .modal-overlay.active {
-        opacity: 1;
-        visibility: visible;
-    }
-
-    .modal-content {
-        background: white;
-        width: 100%;
-        max-width: 580px;
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-xl), 0 0 0 1px rgba(0, 0, 0, 0.04);
-        transform: translateY(14px) scale(0.97);
-        transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-        max-height: 90vh;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-    }
-
-    .modal-overlay.active .modal-content {
-        transform: translateY(0) scale(1);
-    }
-
-    .modal-header {
-        padding: 18px 22px;
-        border-bottom: 1px solid #f1f5f9;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        background: #fafbff;
-        flex-shrink: 0;
-    }
-
-    .modal-header h2 {
-        font-size: 18px;
-        font-weight: 800;
-    }
-
-    .modal-header .mh-sub {
-        font-size: 11.5px;
-        color: var(--text-muted);
-        margin-top: 2px;
-    }
-
-    .close-btn {
-        background: #f1f5f9;
-        border: none;
-        width: 30px;
-        height: 30px;
-        border-radius: 7px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        color: var(--text-muted);
-        font-size: 13px;
-        transition: var(--t);
-        flex-shrink: 0;
-    }
-
-    .close-btn:hover {
-        background: #fee2e2;
-        color: var(--accent-red);
-    }
-
-    .modal-body {
-        padding: 22px;
-        overflow-y: auto;
-        flex: 1;
-    }
-
-    .detail-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-    }
-
-    .detail-item {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .detail-item.fw {
-        grid-column: 1 / -1;
-    }
-
-    .dlabel {
-        font-size: 10px;
-        font-weight: 700;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .dval {
-        font-size: 13.5px;
-        font-weight: 500;
-        background: #f8fafc;
-        padding: 9px 13px;
-        border-radius: 7px;
-        border: 1px solid #f1f5f9;
-    }
-
-    .modal-footer {
-        padding: 14px 22px;
-        border-top: 1px solid #f1f5f9;
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-        flex-shrink: 0;
-        background: #fafbff;
-    }
-
-    .secondary-btn {
-        background: white;
-        color: var(--text-main);
-        border: 1.5px solid #e2e8f0;
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 13.5px;
-        cursor: pointer;
-        transition: var(--t);
-        font-family: inherit;
-    }
-
-    .secondary-btn:hover {
-        background: #f8fafc;
-    }
-
-    .danger-btn {
-        background: #fef2f2;
-        color: var(--accent-red);
-        border: 1.5px solid #fecaca;
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 13.5px;
-        cursor: pointer;
-        transition: var(--t);
-        font-family: inherit;
-    }
-
-    .danger-btn:hover {
-        background: var(--accent-red);
-        color: white;
-        border-color: var(--accent-red);
-    }
-
-    /* ═══ NOTE SECTION ═══ */
-    .note-section {
-        margin-top: 18px;
-        padding-top: 18px;
-        border-top: 1.5px dashed #e8edf5;
-    }
-
-    .note-title {
-        font-size: 10.5px;
-        font-weight: 700;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.7px;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 7px;
-    }
-
-    .local-select,
-    .local-textarea {
-        width: 100%;
-        padding: 9px 12px;
-        border-radius: 8px;
-        border: 1.5px solid #e2e8f0;
-        font-size: 13.5px;
-        font-family: inherit;
-        background: #f8fafc;
-        color: var(--text-main);
-        outline: none;
-        transition: var(--t);
-    }
-
-    .local-select:focus,
-    .local-textarea:focus {
-        border-color: var(--primary);
-        background: white;
-        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
-    }
-
-    .local-textarea {
-        resize: vertical;
-        min-height: 78px;
-    }
-
-    .photo-label {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        padding: 8px 16px;
-        background: #f8fafc;
-        border: 1.5px dashed #cbd5e1;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 12.5px;
-        color: var(--text-muted);
-        font-weight: 600;
-        transition: var(--t);
-    }
-
-    .photo-label:hover {
-        border-color: var(--primary);
-        color: var(--primary);
-        background: rgba(99, 102, 241, 0.04);
-    }
-
-    .photo-preview-area {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 8px;
-    }
-
-    .photo-preview-area img {
-        width: 76px;
-        height: 76px;
-        border-radius: 7px;
-        object-fit: cover;
-        border: 1.5px solid #e2e8f0;
-    }
-
-    .note-save-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        margin-top: 11px;
-        padding: 8px 17px;
-        background: var(--primary);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: var(--t);
-        font-family: inherit;
-    }
-
-    .note-save-btn:hover {
-        background: var(--primary-dark);
-        transform: translateY(-1px);
-    }
-
-    .notes-list {
-        margin-top: 16px;
-    }
-
-    .note-item {
-        background: #fafbff;
-        border: 1.5px solid #e8eaf6;
-        border-radius: 9px;
-        padding: 11px 13px;
-        margin-bottom: 7px;
-    }
-
-    .note-item-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 6px;
-    }
-
-    .note-date {
-        font-size: 11px;
-        color: var(--text-muted);
-    }
-
-    .note-del-btn {
-        background: none;
-        border: none;
-        color: #e2e8f0;
-        cursor: pointer;
-        font-size: 11px;
-        padding: 2px 5px;
-        border-radius: 4px;
-        transition: var(--t);
-    }
-
-    .note-del-btn:hover {
-        color: var(--accent-red);
-        background: #fef2f2;
-    }
-
-    .note-memo {
-        font-size: 13px;
-        color: var(--text-main);
-        margin-bottom: 7px;
-        white-space: pre-wrap;
-        word-break: break-word;
-        line-height: 1.55;
-    }
-
-    .note-photos {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 5px;
-    }
-
-    .note-photos img {
-        width: 68px;
-        height: 68px;
-        border-radius: 6px;
-        object-fit: cover;
-        cursor: pointer;
-        border: 1.5px solid #e2e8f0;
-        transition: var(--t);
-    }
-
-    .note-photos img:hover {
-        transform: scale(1.07);
-        border-color: var(--primary);
-    }
-
-    /* ═══ FORM MODAL ═══ */
-    .form-modal-content {
-        max-width: 820px;
-        height: 85vh;
-    }
-
-    .form-modal-content .modal-body {
-        padding: 0;
-    }
-
-    #formIframe {
-        width: 100%;
-        height: 100%;
-        border: none;
-    }
-
-    /* ═══ TOAST ═══ */
-    .toast {
-        position: fixed;
-        bottom: 22px;
-        right: 22px;
-        padding: 12px 18px;
-        background: #1e293b;
-        color: white;
-        border-radius: 12px;
-        box-shadow: var(--shadow-xl);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 13.5px;
-        font-weight: 500;
-        transform: translateY(70px);
-        opacity: 0;
-        transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-        z-index: 9999;
-        max-width: 300px;
-    }
-
-    .toast.show {
-        transform: translateY(0);
-        opacity: 1;
-    }
-
-    .toast i {
-        font-size: 14px;
-    }
-
-    .toast.success i {
-        color: #34d399;
-    }
-
-    .toast.error i {
-        color: #f87171;
-    }
-
-    .toast.info i {
-        color: #a5b4fc;
-    }
-
-    /* ═══ HISTORY MODAL LIST ═══ */
-    .history-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 11px 0;
-        border-bottom: 1px solid #f8fafc;
-    }
-
-    .history-item:last-child {
-        border-bottom: none;
-    }
-
-    .hist-icon {
-        width: 34px;
-        height: 34px;
-        border-radius: 8px;
-        background: rgba(99, 102, 241, 0.08);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 13px;
-        color: var(--primary);
-        flex-shrink: 0;
-    }
-
-    .hist-name {
-        font-size: 13px;
-        font-weight: 600;
-    }
-
-    .hist-meta {
-        font-size: 11.5px;
-        color: var(--text-muted);
-        margin-top: 1px;
-    }
-
-    /* ═══ STATS SECTION ═══ */
-    .stats-page-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 14px;
-    }
-
-    .stats-page-grid .card.wide {
-        grid-column: 1 / -1;
-    }
-
-    /* ═══ ISSUE BANNER ═══ */
-    .issue-banner {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        background: rgba(239, 68, 68, 0.06);
-        border: 1.5px solid rgba(239, 68, 68, 0.15);
-        border-radius: 10px;
-        padding: 12px 16px;
-        margin-bottom: 16px;
-        font-size: 13px;
-        cursor: pointer;
-        transition: var(--t);
-    }
-
-    .issue-banner:hover {
-        background: rgba(239, 68, 68, 0.1);
-    }
-
-    .issue-banner i {
-        color: var(--accent-red);
-        font-size: 15px;
-    }
-
-    .issue-banner strong {
-        color: var(--accent-red);
-    }
-
-    /* ═══ MOBILE ═══ */
-    @media (max-width: 768px) {
-        .app-container {
-            flex-direction: column;
-            padding-bottom: 64px;
-        }
-
-        .sidebar {
-            width: 100%;
-            height: auto;
-            position: sticky;
-            top: 0;
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 16px;
-            overflow-y: visible;
-            overflow-x: hidden;
-        }
-
-        .logo-wrap {
-            padding: 0;
-        }
-
-        .sidebar-bottom {
-            display: none;
-        }
-
-        .nav-label {
-            display: none;
-        }
-
-        .nav-menu {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            flex-direction: row;
-            justify-content: space-around;
-            padding: 8px 0;
-            z-index: 200;
-            height: 62px;
-        }
-
-        .nav-item {
-            flex-direction: column;
-            padding: 5px 10px;
-            gap: 3px;
-            font-size: 10px;
-        }
-
-        .nav-item::before {
-            display: none;
-        }
-
-        .nav-item i {
-            font-size: 17px;
-            width: auto;
-        }
-
-        .main-content {
-            margin-left: 0;
-            padding: 14px;
-        }
-
-        .top-bar {
-            flex-direction: column;
-            gap: 10px;
-            align-items: stretch;
-            margin-bottom: 18px;
-        }
-
-        .search-wrap {
-            max-width: 100%;
-        }
-
-        .header-actions {
-            justify-content: flex-end;
-        }
-
-        .search-shortcut-hint {
-            display: none;
-        }
-
-        .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-
-        .stat-card {
-            padding: 14px;
-            flex-direction: column;
-            text-align: center;
-            gap: 8px;
-        }
-
-        .stat-data h3 {
-            font-size: 24px;
-        }
-
-        .dashboard-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .dashboard-grid .card.wide {
-            grid-column: 1;
-        }
-
-        .inv-header h1 {
-            font-size: 20px;
-        }
-
-        .inventory-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .inv-toolbar {
-            gap: 6px;
-        }
-
-        .filter-select {
-            font-size: 12px;
-        }
-
-        .toolbar-right {
-            width: 100%;
-            justify-content: flex-end;
-        }
-
-        .modal-content {
-            max-width: 100%;
-            max-height: 95vh;
-            border-radius: var(--radius);
-        }
-
-        .detail-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .modal-footer {
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .modal-footer button,
-        .modal-footer a {
-            flex: 1;
-            justify-content: center;
-        }
-
-        .stats-page-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .stats-page-grid .card.wide {
-            grid-column: 1;
-        }
-
-        td,
-        th {
-            white-space: nowrap;
-        }
-    }
-
-    @media print {
-
-        .sidebar,
-        .top-bar,
-        .modal-overlay,
-        .toast,
-        .inv-toolbar {
-            display: none !important;
-        }
-
-        .main-content {
-            margin-left: 0 !important;
-            padding: 0 !important;
-        }
-
-        .gear-card {
-            break-inside: avoid;
-        }
-
-        body {
-            background: white;
-        }
-    }
-
-    /* ── Sheet Admin ─────────────────────────────────── */
-    .sheet-admin-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 18px;
-        border-radius: 8px;
-        border: 1.5px solid var(--primary);
-        background: transparent;
-        color: var(--primary);
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .sheet-admin-btn:hover {
-        background: var(--primary);
-        color: #fff;
-    }
-
-    .sheet-admin-btn.unlocked {
-        background: #10b981;
-        border-color: #10b981;
-        color: #fff;
-    }
-
-    .sheet-admin-btn.unlocked:hover {
-        background: #059669;
-        border-color: #059669;
-    }
-
-    .sheet-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 13px;
-    }
-
-    .sheet-table th {
-        background: #f8fafc;
-        color: var(--text-muted);
-        font-size: 11.5px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        padding: 10px 14px;
-        text-align: left;
-        border-bottom: 1.5px solid #e8edf5;
-        white-space: nowrap;
-    }
-
-    .sheet-table td {
-        padding: 11px 14px;
-        border-bottom: 1px solid #f1f5f9;
-        color: var(--text-main);
-        vertical-align: middle;
-    }
-
-    .sheet-table tbody tr:hover {
-        background: #f8fafc;
-    }
-
-    .sheet-table tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    .sheet-edit-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 5px 12px;
-        border-radius: 6px;
-        border: 1.5px solid var(--primary);
-        background: transparent;
-        color: var(--primary);
-        font-size: 12px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.15s;
-    }
-
-    .sheet-edit-btn:hover {
-        background: var(--primary);
-        color: #fff;
-    }
-
-    .sheet-del-btn {
-        display: inline-flex;
-        align-items: center;
-        padding: 5px 10px;
-        border-radius: 6px;
-        border: 1.5px solid #ef4444;
-        background: transparent;
-        color: #ef4444;
-        font-size: 12px;
-        cursor: pointer;
-        transition: all 0.15s;
-    }
-
-    .sheet-del-btn:hover {
-        background: #ef4444;
-        color: #fff;
-    }
-
-    /* Sheet Edit Modal */
-    .sheet-edit-modal {
-        display: none;
-        position: fixed;
-        inset: 0;
-        z-index: 3000;
-        background: rgba(15, 23, 42, 0.55);
-        backdrop-filter: blur(4px);
-        align-items: center;
-        justify-content: center;
-    }
-
-    .sheet-edit-modal.active {
-        display: flex;
-    }
-
-    .sheet-edit-modal-box {
-        background: #fff;
-        border-radius: 16px;
-        width: 520px;
-        max-width: 95vw;
-        max-height: 85vh;
-        overflow-y: auto;
-        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
-    }
-
-    .sheet-modal-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 20px 24px 16px;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .sheet-modal-header h2 {
-        font-size: 17px;
-        font-weight: 700;
-        color: var(--text-main);
-        margin: 0;
-    }
-
-    .sheet-modal-body {
-        padding: 20px 24px;
-    }
-
-    .edit-field {
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-        margin-bottom: 14px;
-    }
-
-    .edit-field label {
-        font-size: 11.5px;
-        font-weight: 600;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.4px;
-    }
-
-    .edit-field input,
-    .edit-field select {
-        padding: 9px 12px;
-        border: 1.5px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 13.5px;
-        color: var(--text-main);
-        background: #f8fafc;
-        transition: border-color 0.15s;
-        outline: none;
-    }
-
-    .edit-field input:focus,
-    .edit-field select:focus {
-        border-color: var(--primary);
-        background: #fff;
-    }
-
-    .sheet-modal-footer {
-        display: flex;
-        gap: 10px;
-        justify-content: flex-end;
-        padding: 16px 24px;
-        border-top: 1px solid #f1f5f9;
-    }
-
-    .sheet-modal-save-btn {
-        padding: 9px 22px;
-        border-radius: 8px;
-        border: none;
-        background: var(--primary);
-        color: #fff;
-        font-size: 13.5px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.15s;
-    }
-
-    .sheet-modal-save-btn:hover {
-        background: var(--primary-dark);
-    }
-
-    .sheet-modal-save-btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-
-    .sheet-modal-cancel-btn {
-        padding: 9px 18px;
-        border-radius: 8px;
-        border: 1.5px solid #e2e8f0;
-        background: #fff;
-        color: var(--text-muted);
-        font-size: 13.5px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.15s;
-    }
-
-    .sheet-modal-cancel-btn:hover {
-        border-color: var(--text-muted);
-        color: var(--text-main);
-    }
-</style>
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link
-    href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;800&family=Outfit:wght@400;700;800&display=swap"
-    rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<div class="app-container">
-    <!-- ═══ SIDEBAR ═══ -->
-    <aside class="sidebar">
-        <div class="logo-wrap">
-            <div class="logo-icon"><i class="fas fa-wave-square"></i></div>
-            <div class="logo-text">
-                사랑하는교회<br>
-                장비관리대장
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사랑하는교회 장비관리대장</title>
+
+    <!-- 외부 폰트 & 아이콘 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;800&family=Outfit:wght@400;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- 앱 스타일시트 -->
+    <link rel="stylesheet" href="src/css/variables.css">
+    <link rel="stylesheet" href="src/css/layout.css">
+    <link rel="stylesheet" href="src/css/components.css">
+    <link rel="stylesheet" href="src/css/inventory.css">
+    <link rel="stylesheet" href="src/css/modal.css">
+    <link rel="stylesheet" href="src/css/sheets.css">
+    <link rel="stylesheet" href="src/css/calendar.css">
+    <link rel="stylesheet" href="src/css/toast.css">
+    <link rel="stylesheet" href="src/css/responsive.css">
+</head>
+
+<body>
+
+    <div class="app-container">
+        <!-- ═══ SIDEBAR ═══ -->
+        <aside class="sidebar">
+            <div class="logo-wrap">
+                <div class="logo-icon"><i class="fas fa-wave-square"></i></div>
+                <div class="logo-text">
+                    사랑하는교회<br>
+                    장비관리대장
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-label">메뉴</div>
+                <a class="nav-item active" onclick="showSection('dashboard', this)">
+                    <i class="fas fa-th-large"></i><span>대시보드</span>
+                </a>
+                <a class="nav-item" onclick="showSection('inventory', this)">
+                    <i class="fas fa-boxes-stacked"></i><span>장비 목록</span>
+                </a>
+                <a class="nav-item link-gear-register" target="_blank">
+                    <i class="fas fa-plus-circle"></i><span>장비 등록</span>
+                </a>
+                <a class="nav-item" onclick="showSection('sheet', this)">
+                    <i class="fas fa-table-list"></i><span>시트 관리</span>
+                </a>
+                <a class="nav-item" onclick="showSection('stats', this)">
+                    <i class="fas fa-chart-pie"></i><span>운용 통계</span>
+                </a>
+                <a class="nav-item" onclick="showSection('history', this)">
+                    <i class="fas fa-calendar-days"></i><span>사용 히스토리</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="sync-row">
+                    <div class="sync-dot" id="syncDot"></div>
+                    <span id="syncText">데이터 로딩 중...</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ═══ MAIN CONTENT ═══ -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="search-wrap">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" id="gearSearch" placeholder="장비명, 카테고리로 검색..."
+                        onkeyup="filterInventory()">
+                    <span class="search-shortcut-hint">/</span>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn" id="refreshBtn" onclick="refreshData()" title="데이터 새로고침">
+                        <i class="fas fa-rotate-right"></i>
+                    </button>
+                    <button class="icon-btn" onclick="openHistoryModal()" title="업데이트 히스토리">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" id="history-badge">0</span>
+                    </button>
+                    <button class="icon-btn" onclick="printInventory()" title="목록 인쇄">
+                        <i class="fas fa-print"></i>
+                    </button>
+                    <a class="primary-btn link-gear-register-btn" target="_blank" style="text-decoration:none;">
+                        <i class="fas fa-plus"></i>새 장비 등록
+                    </a>
+                </div>
+            </header>
+
+            <!-- ═══ DASHBOARD ═══ -->
+            <section id="dashboard-section" class="content-section">
+                <div class="section-header">
+                    <h1>실시간 현황</h1>
+                    <p class="subtitle">전체 음향 장비의 운용 상태를 한눈에 파악하세요.</p>
+                </div>
+
+                <div id="issueBanner" class="issue-banner" style="display:none;" onclick="filterByIssueBanner()">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <span>수리 중이거나 문제가 발견된 장비가 <strong id="issueCount">0</strong>건 있습니다. 확인이 필요합니다.</span>
+                    <i class="fas fa-chevron-right" style="margin-left:auto; color:#94a3b8;"></i>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card purple">
+                        <div class="bg-glow" style="background:#a855f7;"></div>
+                        <div class="stat-icon purple"><i class="fas fa-boxes-stacked"></i></div>
+                        <div class="stat-data">
+                            <span class="label">총 보유 장비</span>
+                            <h3 id="total-count">0</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card green">
+                        <div class="bg-glow" style="background:#10b981;"></div>
+                        <div class="stat-icon green"><i class="fas fa-circle-check"></i></div>
+                        <div class="stat-data">
+                            <span class="label">가용 가능</span>
+                            <h3 id="available-count">0</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card orange">
+                        <div class="bg-glow" style="background:#f59e0b;"></div>
+                        <div class="stat-icon orange"><i class="fas fa-clock"></i></div>
+                        <div class="stat-data">
+                            <span class="label">대여 중</span>
+                            <h3 id="in-use-count">0</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card red">
+                        <div class="bg-glow" style="background:#ef4444;"></div>
+                        <div class="stat-icon red"><i class="fas fa-screwdriver-wrench"></i></div>
+                        <div class="stat-data">
+                            <span class="label">수리/점검</span>
+                            <h3 id="repair-count">0</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="card wide">
+                        <div class="card-header">
+                            <h3><i class="fas fa-clock-rotate-left"
+                                    style="color:var(--text-muted);margin-right:7px;font-size:13px;"></i>최근 등록된 장비</h3>
+                            <button class="text-btn"
+                                onclick="showSection('inventory', document.querySelectorAll('.nav-item')[1])">전체보기 <i
+                                    class="fas fa-arrow-right"></i></button>
+                        </div>
+                        <div class="table-container">
+                            <table id="recent-table">
+                                <thead>
+                                    <tr>
+                                        <th>장비명</th>
+                                        <th>카테고리</th>
+                                        <th>상태</th>
+                                        <th>등록일</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>카테고리 현황</h3>
+                        </div>
+                        <div style="position:relative;height:200px;width:100%"><canvas id="categoryChart"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>부서별 대여 현황</h3>
+                        </div>
+                        <div style="position:relative;height:200px;width:100%"><canvas id="departmentChart"></canvas></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ═══ INVENTORY ═══ -->
+            <section id="inventory-section" class="content-section" style="display:none;">
+                <div class="inv-header">
+                    <div>
+                        <h1>장비 인벤토리</h1>
+                        <p class="subtitle">모든 장비의 상세 정보 및 이력을 관리합니다.</p>
+                    </div>
+                </div>
+
+                <div class="inv-toolbar">
+                    <div class="status-pills">
+                        <button class="spill on" onclick="filterByStatusPill('all', this)">전체</button>
+                        <button class="spill" onclick="filterByStatusPill('가용', this)">가용</button>
+                        <button class="spill" onclick="filterByStatusPill('대여중', this)">대여중</button>
+                        <button class="spill" onclick="filterByStatusPill('수리중', this)">수리중</button>
+                        <button class="spill" onclick="filterByStatusPill('문제발견', this)">문제발견</button>
+                        <button class="spill" onclick="filterByStatusPill('분실', this)">분실</button>
+                    </div>
+                    <select class="filter-select" id="categoryFilter" onchange="filterInventory()">
+                        <option value="all">모든 카테고리</option>
+                        <option value="음향">음향</option>
+                        <option value="영상">영상</option>
+                        <option value="사진">사진</option>
+                        <option value="기타">기타</option>
+                    </select>
+                    <select class="filter-select" id="locationFilter" onchange="filterInventory()">
+                        <option value="all">모든 장소</option>
+                    </select>
+                    <select class="filter-select" id="departmentFilter" onchange="filterInventory()">
+                        <option value="all">모든 부서</option>
+                    </select>
+                    <div class="toolbar-right">
+                        <select class="filter-select" id="sortSelect" onchange="filterInventory()">
+                            <option value="default">정렬: 기본</option>
+                            <option value="name">이름순</option>
+                            <option value="status">상태순</option>
+                            <option value="category">카테고리순</option>
+                            <option value="date">날짜순</option>
+                        </select>
+                        <span class="result-count" id="result-count">0건</span>
+                        <div class="view-toggle">
+                            <button class="vbtn" id="vbtn-grid" onclick="toggleView('grid')" title="그리드 보기">
+                                <i class="fas fa-table-cells"></i></button>
+                            <button class="vbtn on" id="vbtn-list" onclick="toggleView('list')" title="목록 보기">
+                                <i class="fas fa-list"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="inventory-list"></div>
+            </section>
+
+            <!-- ═══ STATS ═══ -->
+            <section id="stats-section" class="content-section" style="display:none;">
+                <div class="section-header">
+                    <h1>운용 통계</h1>
+                    <p class="subtitle">데이터 기반 장비 운용 현황 및 분석입니다.</p>
+                </div>
+                <div class="stats-grid" id="stats-summary-grid"></div>
+                <div class="stats-page-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>전체 장비 상태 비율</h3>
+                        </div>
+                        <div style="position:relative;height:250px;width:100%"><canvas id="statusChart"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>부서별 장비 보유</h3>
+                        </div>
+                        <div style="position:relative;height:250px;width:100%"><canvas id="deptPolarChart"></canvas></div>
+                    </div>
+                    <div class="card wide">
+                        <div class="card-header">
+                            <h3>장소별 장비 보관 현황</h3>
+                        </div>
+                        <div style="position:relative;height:280px;width:100%"><canvas id="locationBarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ═══ HISTORY CALENDAR ═══ -->
+            <section id="history-section" class="content-section" style="display:none;">
+                <div class="section-header">
+                    <h1>사용 히스토리</h1>
+                    <p class="subtitle">장비 사용 이력을 달력으로 확인합니다.</p>
+                </div>
+
+                <div class="cal-header">
+                    <div class="cal-filters">
+                        <select class="filter-select" id="calCategoryFilter" onchange="filterHistory()">
+                            <option value="all">모든 카테고리</option>
+                            <option value="음향">음향</option>
+                            <option value="영상">영상</option>
+                            <option value="사진">사진</option>
+                            <option value="기타">기타</option>
+                        </select>
+                        <select class="filter-select" id="calDepartmentFilter" onchange="filterHistory()">
+                            <option value="all">모든 부서</option>
+                        </select>
+                        <input type="text" class="filter-select" id="calSearch" placeholder="장비명 검색..."
+                            oninput="filterHistory()" style="width:160px;">
+                    </div>
+                    <div class="cal-nav">
+                        <button class="cal-nav-btn" onclick="prevMonth()"><i class="fas fa-chevron-left"></i></button>
+                        <span class="cal-month-title" id="calendarMonthTitle"></span>
+                        <button class="cal-nav-btn" onclick="nextMonth()"><i class="fas fa-chevron-right"></i></button>
+                        <button class="cal-nav-btn" onclick="goToToday()"><i class="fas fa-calendar-check"></i>
+                            오늘</button>
+                    </div>
+                </div>
+
+                <div class="card" style="padding:0 16px 16px;">
+                    <div class="cal-dow-row">
+                        <div class="cal-dow sunday">일</div>
+                        <div class="cal-dow">월</div>
+                        <div class="cal-dow">화</div>
+                        <div class="cal-dow">수</div>
+                        <div class="cal-dow">목</div>
+                        <div class="cal-dow">금</div>
+                        <div class="cal-dow saturday">토</div>
+                    </div>
+                    <div id="calendarGrid"></div>
+                </div>
+
+                <div class="cal-legend">
+                    <div class="cal-legend-item">
+                        <div class="cal-legend-dot" style="background:rgba(99,102,241,0.4);"></div>음향
+                    </div>
+                    <div class="cal-legend-item">
+                        <div class="cal-legend-dot" style="background:rgba(59,130,246,0.4);"></div>영상
+                    </div>
+                    <div class="cal-legend-item">
+                        <div class="cal-legend-dot" style="background:rgba(236,72,153,0.4);"></div>사진
+                    </div>
+                    <div class="cal-legend-item">
+                        <div class="cal-legend-dot" style="background:rgba(100,116,139,0.3);"></div>기타
+                    </div>
+                </div>
+            </section>
+
+            <!-- ═══ SHEET ADMIN ═══ -->
+            <section id="sheet-section" class="content-section" style="display:none;">
+                <div class="section-header"
+                    style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                    <div>
+                        <h1>시트 관리</h1>
+                        <p class="subtitle">스프레드시트 데이터를 직접 조회하고 편집합니다.</p>
+                    </div>
+                    <button class="sheet-admin-btn" id="sheetAdminBtn" onclick="toggleSheetAdmin()">
+                        <i class="fas fa-lock"></i> 관리자 잠금
+                    </button>
+                </div>
+                <div class="card" style="overflow-x:auto;padding:0;">
+                    <table class="sheet-table" id="sheetDataTable">
+                        <thead id="sheetTableHead"></thead>
+                        <tbody id="sheetTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ═══ TOAST ═══ -->
+    <div id="toast" class="toast"><i class="fas fa-check-circle"></i><span id="toastMsg">알림</span></div>
+
+    <!-- ═══ SHEET EDIT MODAL ═══ -->
+    <div id="sheetEditModal" class="sheet-edit-modal">
+        <div class="sheet-edit-modal-box">
+            <div class="sheet-modal-header">
+                <h3 style="font-size:16px;font-weight:700;color:var(--text-main);">장비 정보 수정</h3>
+                <button class="close-btn" onclick="closeSheetEditModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="sheet-modal-body" id="sheetEditFields"></div>
+            <div class="sheet-modal-footer">
+                <button class="sheet-modal-cancel-btn" onclick="closeSheetEditModal()">취소</button>
+                <button class="sheet-modal-save-btn" id="sheetSaveBtn" onclick="saveSheetEdit()">
+                    <i class="fas fa-save"></i> 저장
+                </button>
             </div>
         </div>
+    </div>
 
-        <nav class="nav-menu">
-            <div class="nav-label">메뉴</div>
-            <a class="nav-item active" onclick="showSection('dashboard', this)">
-                <i class="fas fa-th-large"></i><span>대시보드</span>
-            </a>
-            <a class="nav-item" onclick="showSection('inventory', this)">
-                <i class="fas fa-boxes-stacked"></i><span>장비 목록</span>
-            </a>
-            <a class="nav-item link-gear-register" target="_blank">
-                <i class="fas fa-plus-circle"></i><span>장비 등록</span>
-            </a>
-            <a class="nav-item" onclick="showSection('sheet', this)">
-                <i class="fas fa-table-list"></i><span>시트 관리</span>
-            </a>
-            <a class="nav-item" onclick="showSection('stats', this)">
-                <i class="fas fa-chart-pie"></i><span>운용 통계</span>
-            </a>
-        </nav>
-
-        <div class="sidebar-bottom">
-            <div class="sync-row">
-                <div class="sync-dot" id="syncDot"></div>
-                <span id="syncText">데이터 로딩 중...</span>
+    <!-- ═══ GEAR DETAIL MODAL ═══ -->
+    <div id="gearModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2 id="modalTitle">장비 상세 정보</h2>
+                    <div class="mh-sub" id="modalSubtitle"></div>
+                </div>
+                <button class="close-btn" onclick="closeModal()"><i class="fas fa-times"></i></button>
             </div>
-        </div>
-    </aside>
-
-    <!-- ═══ MAIN CONTENT ═══ -->
-    <main class="main-content">
-        <header class="top-bar">
-            <div class="search-wrap">
-                <i class="fas fa-search search-icon"></i>
-                <input type="text" class="search-input" id="gearSearch" placeholder="장비명, 카테고리로 검색..."
-                    onkeyup="filterInventory()">
-                <span class="search-shortcut-hint">/</span>
-            </div>
-            <div class="header-actions">
-                <button class="icon-btn" id="refreshBtn" onclick="refreshData()" title="데이터 새로고침">
-                    <i class="fas fa-rotate-right"></i>
-                </button>
-                <button class="icon-btn" onclick="openHistoryModal()" title="업데이트 히스토리">
-                    <i class="fas fa-bell"></i>
-                    <span class="badge" id="history-badge">0</span>
-                </button>
-                <button class="icon-btn" onclick="printInventory()" title="목록 인쇄">
-                    <i class="fas fa-print"></i>
-                </button>
-                <a class="primary-btn link-gear-register-btn" target="_blank" style="text-decoration:none;">
-                    <i class="fas fa-plus"></i>새 장비 등록
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-footer">
+                <button class="danger-btn" onclick="deleteItem()"><i class="fas fa-trash"></i> 삭제</button>
+                <button class="secondary-btn" onclick="closeModal()">닫기</button>
+                <a class="primary-btn" id="modalEditBtn" target="_blank" style="text-decoration:none; display:none;">
+                    <i class="fas fa-external-link-alt"></i>Google Form 수정
                 </a>
             </div>
-        </header>
-
-        <!-- ═══ DASHBOARD ═══ -->
-        <section id="dashboard-section" class="content-section">
-            <div class="section-header">
-                <h1>실시간 현황</h1>
-                <p class="subtitle">전체 음향 장비의 운용 상태를 한눈에 파악하세요.</p>
-            </div>
-
-            <div id="issueBanner" class="issue-banner" style="display:none;" onclick="filterByIssueBanner()">
-                <i class="fas fa-triangle-exclamation"></i>
-                <span>수리 중이거나 문제가 발견된 장비가 <strong id="issueCount">0</strong>건 있습니다. 확인이 필요합니다.</span>
-                <i class="fas fa-chevron-right" style="margin-left:auto; color:#94a3b8;"></i>
-            </div>
-
-            <div class="stats-grid">
-                <div class="stat-card purple">
-                    <div class="bg-glow" style="background:#a855f7;"></div>
-                    <div class="stat-icon purple"><i class="fas fa-boxes-stacked"></i></div>
-                    <div class="stat-data">
-                        <span class="label">총 보유 장비</span>
-                        <h3 id="total-count">0</h3>
-                    </div>
-                </div>
-                <div class="stat-card green">
-                    <div class="bg-glow" style="background:#10b981;"></div>
-                    <div class="stat-icon green"><i class="fas fa-circle-check"></i></div>
-                    <div class="stat-data">
-                        <span class="label">가용 가능</span>
-                        <h3 id="available-count">0</h3>
-                    </div>
-                </div>
-                <div class="stat-card orange">
-                    <div class="bg-glow" style="background:#f59e0b;"></div>
-                    <div class="stat-icon orange"><i class="fas fa-clock"></i></div>
-                    <div class="stat-data">
-                        <span class="label">대여 중</span>
-                        <h3 id="in-use-count">0</h3>
-                    </div>
-                </div>
-                <div class="stat-card red">
-                    <div class="bg-glow" style="background:#ef4444;"></div>
-                    <div class="stat-icon red"><i class="fas fa-screwdriver-wrench"></i></div>
-                    <div class="stat-data">
-                        <span class="label">수리/점검</span>
-                        <h3 id="repair-count">0</h3>
-                    </div>
-                </div>
-            </div>
-
-            <div class="dashboard-grid">
-                <div class="card wide">
-                    <div class="card-header">
-                        <h3><i class="fas fa-clock-rotate-left"
-                                style="color:var(--text-muted);margin-right:7px;font-size:13px;"></i>최근 등록된 장비</h3>
-                        <button class="text-btn"
-                            onclick="showSection('inventory', document.querySelectorAll('.nav-item')[1])">전체보기 <i
-                                class="fas fa-arrow-right"></i></button>
-                    </div>
-                    <div class="table-container">
-                        <table id="recent-table">
-                            <thead>
-                                <tr>
-                                    <th>장비명</th>
-                                    <th>카테고리</th>
-                                    <th>상태</th>
-                                    <th>등록일</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-header">
-                        <h3>카테고리 현황</h3>
-                    </div>
-                    <div style="position:relative;height:200px;width:100%"><canvas id="categoryChart"></canvas></div>
-                </div>
-                <div class="card">
-                    <div class="card-header">
-                        <h3>부서별 대여 현황</h3>
-                    </div>
-                    <div style="position:relative;height:200px;width:100%"><canvas id="departmentChart"></canvas></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ═══ INVENTORY ═══ -->
-        <section id="inventory-section" class="content-section" style="display:none;">
-            <div class="inv-header">
-                <div>
-                    <h1>장비 인벤토리</h1>
-                    <p class="subtitle">모든 장비의 상세 정보 및 이력을 관리합니다.</p>
-                </div>
-            </div>
-
-            <div class="inv-toolbar">
-                <div class="status-pills">
-                    <button class="spill on" onclick="filterByStatusPill('all', this)">전체</button>
-                    <button class="spill" onclick="filterByStatusPill('가용', this)">가용</button>
-                    <button class="spill" onclick="filterByStatusPill('대여중', this)">대여중</button>
-                    <button class="spill" onclick="filterByStatusPill('수리중', this)">수리중</button>
-                    <button class="spill" onclick="filterByStatusPill('문제발견', this)">문제발견</button>
-                    <button class="spill" onclick="filterByStatusPill('분실', this)">분실</button>
-                </div>
-                <select class="filter-select" id="categoryFilter" onchange="filterInventory()">
-                    <option value="all">모든 카테고리</option>
-                    <option value="음향">음향</option>
-                    <option value="영상">영상</option>
-                    <option value="사진">사진</option>
-                    <option value="기타">기타</option>
-                </select>
-                <select class="filter-select" id="locationFilter" onchange="filterInventory()">
-                    <option value="all">모든 장소</option>
-                </select>
-                <select class="filter-select" id="departmentFilter" onchange="filterInventory()">
-                    <option value="all">모든 부서</option>
-                </select>
-                <div class="toolbar-right">
-                    <select class="filter-select" id="sortSelect" onchange="filterInventory()">
-                        <option value="default">정렬: 기본</option>
-                        <option value="name">이름순</option>
-                        <option value="status">상태순</option>
-                        <option value="category">카테고리순</option>
-                        <option value="date">날짜순</option>
-                    </select>
-                    <span class="result-count" id="result-count">0건</span>
-                    <div class="view-toggle">
-                        <button class="vbtn" id="vbtn-grid" onclick="toggleView('grid')" title="그리드 보기"><i
-                                class="fas fa-table-cells"></i></button>
-                        <button class="vbtn on" id="vbtn-list" onclick="toggleView('list')" title="목록 보기"><i
-                                class="fas fa-list"></i></button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="inventory-list"></div>
-        </section>
-
-        <!-- ═══ STATS ═══ -->
-        <section id="stats-section" class="content-section" style="display:none;">
-            <div class="section-header">
-                <h1>운용 통계</h1>
-                <p class="subtitle">데이터 기반 장비 운용 현황 및 분석입니다.</p>
-            </div>
-            <div class="stats-grid" id="stats-summary-grid"></div>
-            <div class="stats-page-grid">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>전체 장비 상태 비율</h3>
-                    </div>
-                    <div style="position:relative;height:250px;width:100%"><canvas id="statusChart"></canvas></div>
-                </div>
-                <div class="card">
-                    <div class="card-header">
-                        <h3>부서별 장비 보유</h3>
-                    </div>
-                    <div style="position:relative;height:250px;width:100%"><canvas id="deptPolarChart"></canvas></div>
-                </div>
-                <div class="card wide">
-                    <div class="card-header">
-                        <h3>장소별 장비 보관 현황</h3>
-                    </div>
-                    <div style="position:relative;height:280px;width:100%"><canvas id="locationBarChart"></canvas></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ═══ SHEET ADMIN ═══ -->
-        <section id="sheet-section" class="content-section" style="display:none;">
-            <div class="section-header"
-                style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-                <div>
-                    <h1>시트 관리</h1>
-                    <p class="subtitle">스프레드시트 데이터를 직접 조회하고 편집합니다.</p>
-                </div>
-                <button class="sheet-admin-btn" id="sheetAdminBtn" onclick="toggleSheetAdmin()">
-                    <i class="fas fa-lock"></i> 관리자 잠금
-                </button>
-            </div>
-            <div class="card" style="overflow-x:auto;padding:0;">
-                <table class="sheet-table" id="sheetDataTable">
-                    <thead id="sheetTableHead"></thead>
-                    <tbody id="sheetTableBody"></tbody>
-                </table>
-            </div>
-        </section>
-    </main>
-</div>
-
-<!-- ═══ TOAST ═══ -->
-<div id="toast" class="toast"><i class="fas fa-check-circle"></i><span id="toastMsg">알림</span></div>
-
-<!-- ═══ SHEET EDIT MODAL ═══ -->
-<div id="sheetEditModal" class="sheet-edit-modal">
-    <div class="sheet-edit-modal-box">
-        <div class="sheet-modal-header">
-            <h3 style="font-size:16px;font-weight:700;color:var(--text-main);">장비 정보 수정</h3>
-            <button class="close-btn" onclick="closeSheetEditModal()"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="sheet-modal-body" id="sheetEditFields"></div>
-        <div class="sheet-modal-footer">
-            <button class="sheet-modal-cancel-btn" onclick="closeSheetEditModal()">취소</button>
-            <button class="sheet-modal-save-btn" id="sheetSaveBtn" onclick="saveSheetEdit()">
-                <i class="fas fa-save"></i> 저장
-            </button>
         </div>
     </div>
-</div>
 
-<!-- ═══ GEAR DETAIL MODAL ═══ -->
-<div id="gearModal" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header">
-            <div>
-                <h2 id="modalTitle">장비 상세 정보</h2>
-                <div class="mh-sub" id="modalSubtitle"></div>
+    <!-- ═══ FORM MODAL ═══ -->
+    <div id="formModal" class="modal-overlay">
+        <div class="modal-content form-modal-content">
+            <div class="modal-header">
+                <h2 id="formModalTitle">장비 등록</h2>
+                <button class="close-btn" onclick="closeFormModal()"><i class="fas fa-times"></i></button>
             </div>
-            <button class="close-btn" onclick="closeModal()"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="modal-body" id="modalBody"></div>
-        <div class="modal-footer">
-            <button class="danger-btn" onclick="deleteItem()"><i class="fas fa-trash"></i> 삭제</button>
-            <button class="secondary-btn" onclick="closeModal()">닫기</button>
-            <a class="primary-btn" id="modalEditBtn" target="_blank" style="text-decoration:none; display:none;">
-                <i class="fas fa-external-link-alt"></i>Google Form 수정
-            </a>
+            <div class="modal-body"><iframe id="formIframe" src=""></iframe></div>
         </div>
     </div>
-</div>
 
-<!-- ═══ FORM MODAL ═══ -->
-<div id="formModal" class="modal-overlay">
-    <div class="modal-content form-modal-content">
-        <div class="modal-header">
-            <h2 id="formModalTitle">장비 등록</h2>
-            <button class="close-btn" onclick="closeFormModal()"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="modal-body"><iframe id="formIframe" src=""></iframe></div>
-    </div>
-</div>
-
-<!-- ═══ HISTORY MODAL ═══ -->
-<div id="historyModal" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2><i class="fas fa-clock-rotate-left" style="color:var(--primary);margin-right:8px;"></i>업데이트 히스토리</h2>
-            <button class="close-btn" onclick="closeHistoryModal()"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="modal-body" style="max-height:420px;">
-            <div id="historyList"></div>
-        </div>
-        <div class="modal-footer">
-            <button class="secondary-btn" onclick="closeHistoryModal()">닫기</button>
+    <!-- ═══ HISTORY MODAL ═══ -->
+    <div id="historyModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-clock-rotate-left" style="color:var(--primary);margin-right:8px;"></i>업데이트 히스토리</h2>
+                <button class="close-btn" onclick="closeHistoryModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="max-height:420px;">
+                <div id="historyList"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="secondary-btn" onclick="closeHistoryModal()">닫기</button>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- ═══ IMAGE MODAL ═══ -->
-<div id="imageModal" class="modal-overlay" onclick="closeImageModal()">
-    <div class="modal-content" style="max-width:90%; border-radius:12px; background:transparent; box-shadow:none;"
-        onclick="event.stopPropagation()">
-        <div style="text-align:right; margin-bottom:10px;">
-            <button class="close-btn"
-                style="background:rgba(255,255,255,0.2); color:white; width:40px; height:40px; font-size:18px;"
-                onclick="closeImageModal()"><i class="fas fa-times"></i></button>
+    <!-- ═══ IMAGE MODAL ═══ -->
+    <div id="imageModal" class="modal-overlay" onclick="closeImageModal()">
+        <div class="modal-content" style="max-width:90%; border-radius:12px; background:transparent; box-shadow:none;"
+            onclick="event.stopPropagation()">
+            <div style="text-align:right; margin-bottom:10px;">
+                <button class="close-btn"
+                    style="background:rgba(255,255,255,0.2); color:white; width:40px; height:40px; font-size:18px;"
+                    onclick="closeImageModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <img id="modalImage" src=""
+                style="width:100%; max-height:85vh; object-fit:contain; border-radius:12px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
         </div>
-        <img id="modalImage" src=""
-            style="width:100%; max-height:85vh; object-fit:contain; border-radius:12px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
     </div>
-</div>
 
-<script>
-    // ═══ CONFIG ═══
-    const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeAbW1PX3Cg9oNc3kn0p0HLTkfDDg0C1QEGHOqxbQ25Zo69Rw/viewform?usp=sharing&ouid=106361419293264327468";
-    const GOOGLE_SHEET_API = "https://docs.google.com/spreadsheets/d/1AWw7zH5PAGLLMgpQ5WfSN4-R7Cr2E2VeFxstQoxAU1k/gviz/tq?tqx=out:json&gid=432772852";
-    const GOOGLE_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzFn_aWZmXa9Yjtx4YxXTteFtkgMndXE087en-cTfWE8CSDPPPQ0nyeLQnuATJIEA43aQ/exec";
-    // Notes 시트 읽기용 gviz/tq URL (CORS 없음, 인벤토리와 동일 방식)
-    const _SID = (GOOGLE_SHEET_API.match(/spreadsheets\/d\/([^\/]+)/) || [])[1] || '';
-    const NOTES_SHEET_URL = _SID ? `https://docs.google.com/spreadsheets/d/${_SID}/gviz/tq?tqx=out:json&sheet=Notes` : '';
-
-    const LOCATIONS = [
-        "B1층 리바이벌 성전", "1층 유치부실", "1층 다윗의 장막",
-        "1층 새가족1실", "1층 새가족2실", "2층 웨일즈성전", "2층 아주사성전",
-        "2층 유아예배실", "2층 영아예배실", "3/4층 본당", "6층 존웨슬리홀", "방재실"
-    ];
-
-    const DEPARTMENTS = ["방재실", "유치부 영상음향팀", "유초등부 영상음향팀", "중고등부 영상음향팀", "청년부 영상팀", "청년부 음향팀", "사사모 영상팀", "사사모 음향팀", "본팀 영상팀", "본팀 음향팀"];
-
-    let inventoryData = [];
-
-    let currentSelectedId = null;
-    let currentView = 'list'; // 'grid' | 'list'
-    let currentStatusPill = 'all';
-    let localPhotoDataUrls = [];
-    let pendingNotes = {};    // { [itemId]: [note,...] } — 저장 후 gviz 캐시 반영 전 임시 보관
-    let deletedNoteIds = new Set(); // 삭제 후 gviz 캐시 반영 전 임시 보관
-    let categoryChartInstance = null;
-    let departmentChartInstance = null;
-    let statusChartInstance = null;
-    let deptPolarChartInstance = null;
-    let locationBarChartInstance = null;
-
-    // ═══ INIT ═══
-    document.addEventListener('DOMContentLoaded', () => {
-        initDropdowns();
-        initDashboard();
-        renderInventory();
-        updateStats();
-
-        // Search Enter
-        document.getElementById('gearSearch').addEventListener('keypress', e => {
-            if (e.key === 'Enter') {
-                showSection('inventory', document.querySelectorAll('.nav-item')[1]);
-                filterInventory();
-            }
-        });
-
-        // Keyboard shortcut "/" to focus search
-        document.addEventListener('keydown', e => {
-            if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
-                e.preventDefault();
-                document.getElementById('gearSearch').focus();
-            }
-            if (e.key === 'Escape') {
-                closeModal(); closeFormModal(); closeHistoryModal(); closeSheetEditModal();
-            }
-        });
-
-        // External links
-        document.querySelectorAll('.link-gear-register, .link-gear-register-btn').forEach(el => {
-            el.href = GOOGLE_FORM_URL; el.target = '_blank';
-        });
-
-        setSyncStatus('syncing', '데이터 로딩 중...');
-        if (GOOGLE_SHEET_API && GOOGLE_SHEET_API.trim() !== "") {
-            fetchDataFromGS();
-        }
-    });
-
-    // ═══ DROPDOWNS ═══
-    function initDropdowns() {
-        const locSel = document.getElementById('locationFilter');
-        LOCATIONS.forEach(loc => {
-            const o = document.createElement('option'); o.value = loc; o.innerText = loc;
-            locSel.appendChild(o);
-        });
-        const depSel = document.getElementById('departmentFilter');
-        DEPARTMENTS.forEach(dep => {
-            const o = document.createElement('option'); o.value = dep; o.innerText = dep;
-            depSel.appendChild(o);
-        });
-    }
-
-    // ═══ DASHBOARD ═══
-    function initDashboard() {
-        const tbody = document.querySelector('#recent-table tbody');
-        tbody.innerHTML = '';
-        const recent = [...inventoryData].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 8);
-        recent.forEach(item => {
-            const row = document.createElement('tr');
-            row.onclick = () => openModal(item.id);
-            row.innerHTML = `
-                <td><strong>${item.name}</strong></td>
-                <td><span style="font-size:12px;color:var(--text-muted);">${item.category}</span></td>
-                <td><span class="status-tag ${getStatusClass(item.status)}">${item.status}</span></td>
-                <td style="color:var(--text-muted);font-size:12.5px;">${item.date}</td>
-            `;
-            tbody.appendChild(row);
-        });
-        initCharts();
-
-        // Issue banner
-        const issueItems = inventoryData.filter(i => i.status === '수리중' || i.status === '분실' || i.status === '문제발견');
-        const banner = document.getElementById('issueBanner');
-        document.getElementById('issueCount').innerText = issueItems.length;
-        banner.style.display = issueItems.length > 0 ? 'flex' : 'none';
-    }
-
-    function initCharts() {
-        const catCounts = inventoryData.reduce((acc, i) => { acc[i.category] = (acc[i.category] || 0) + 1; return acc; }, {});
-        const ctxCat = document.getElementById('categoryChart').getContext('2d');
-        if (categoryChartInstance) categoryChartInstance.destroy();
-        categoryChartInstance = new Chart(ctxCat, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(catCounts),
-                datasets: [{
-                    data: Object.values(catCounts),
-                    backgroundColor: ['#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#a855f7', '#ef4444', '#64748b'],
-                    borderWidth: 0, hoverOffset: 4
-                }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { size: 11 }, boxWidth: 10 } } } }
-        });
-
-        const inUse = inventoryData.filter(i => i.status === '대여중');
-        const depCounts = inUse.reduce((acc, i) => { acc[i.department] = (acc[i.department] || 0) + 1; return acc; }, {});
-        const ctxDep = document.getElementById('departmentChart').getContext('2d');
-        if (departmentChartInstance) departmentChartInstance.destroy();
-        departmentChartInstance = new Chart(ctxDep, {
-            type: 'bar',
-            data: {
-                labels: Object.keys(depCounts),
-                datasets: [{ label: '대여중', data: Object.values(depCounts), backgroundColor: '#818cf8', borderRadius: 5 }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f1f5f9' } }, x: { ticks: { font: { size: 10 } } } },
-                plugins: { legend: { display: false } }
-            }
-        });
-    }
-
-    // ═══ INVENTORY ═══
-    function renderInventory(data) {
-        if (data === undefined) data = getFilteredData();
-        const container = document.getElementById('inventory-list');
-        document.getElementById('result-count').innerText = `${data.length}건`;
-
-        if (data.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-magnifying-glass"></i>
-                    <h3>검색 결과가 없습니다</h3>
-                    <p>다른 검색어나 필터를 사용해보세요.</p>
-                </div>`;
-            return;
-        }
-
-        if (currentView === 'grid') {
-            container.innerHTML = '';
-            container.className = 'inventory-grid';
-            data.forEach(item => {
-                const noteCount = getNoteCount(item.id);
-                const accentClass = getStatusClass(item.status) || 'default';
-                const bgClass = getBgClass(item.icon);
-                const card = document.createElement('div');
-                card.className = 'gear-card';
-                card.onclick = () => openModal(item.id);
-                card.innerHTML = `
-                    <div class="gear-accent ${accentClass}"></div>
-                    <div class="gear-icon-area ${bgClass}">
-                        <i class="fas ${item.icon}"></i>
-                        ${noteCount > 0 ? `<div class="gear-note-dot" title="${noteCount}개 기록">${noteCount}</div>` : ''}
-                        <div class="gear-status-overlay">
-                            <span class="status-tag ${accentClass}">${item.status}</span>
-                        </div>
-                    </div>
-                    <div class="gear-body">
-                        <div class="gear-cat">${item.category}</div>
-                        <div class="gear-name">${item.name}</div>
-                        <div class="gear-meta">
-                            <div class="gear-meta-row"><i class="fas fa-location-dot"></i>${item.location}</div>
-                            <div class="gear-meta-row"><i class="fas fa-user"></i>${item.user} · ${item.department}</div>
-                            <div class="gear-meta-row"><i class="fas fa-tag"></i>${item.purpose}</div>
-                        </div>
-                    </div>`;
-                container.appendChild(card);
-            });
-        } else {
-            container.className = '';
-            const noteCol = data.some(i => getNoteCount(i.id) > 0);
-            container.innerHTML = `
-                <div class="card" style="padding:0; overflow:hidden;">
-                    <table class="list-table">
-                        <thead>
-                            <tr>
-                                <th>장비명</th>
-                                <th>카테고리</th>
-                                <th>상태</th>
-                                <th>위치</th>
-                                <th>부서</th>
-                                <th>날짜</th>
-                                ${noteCol ? '<th>기록</th>' : ''}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${data.map(item => {
-                const nc = getNoteCount(item.id);
-                const bgc = getBgClass(item.icon);
-                return `<tr onclick="openModal(${item.id})">
-                                    <td>
-                                        <div class="name-cell">
-                                            <div class="mini-icon ${bgc}"><i class="fas ${item.icon}"></i></div>
-                                            <strong>${item.name}</strong>
-                                        </div>
-                                    </td>
-                                    <td style="color:var(--text-muted);font-size:12.5px;">${item.category}</td>
-                                    <td><span class="status-tag ${getStatusClass(item.status)}">${item.status}</span></td>
-                                    <td style="font-size:12.5px;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;">${item.location}</td>
-                                    <td style="font-size:12.5px;color:var(--text-muted);">${item.department}</td>
-                                    <td style="font-size:12px;color:var(--text-muted);">${item.date}</td>
-                                    ${noteCol ? `<td>${nc > 0 ? `<span class="list-note-badge"><i class="fas fa-note-sticky"></i>${nc}</span>` : ''}</td>` : ''}
-                                </tr>`;
-            }).join('')}
-                        </tbody>
-                    </table>
-                </div>`;
-        }
-    }
-
-    function getFilteredData() {
-        const search = (document.getElementById('gearSearch')?.value || '').toLowerCase();
-        const cat = document.getElementById('categoryFilter')?.value || 'all';
-        const loc = document.getElementById('locationFilter')?.value || 'all';
-        const dep = document.getElementById('departmentFilter')?.value || 'all';
-        const sortBy = document.getElementById('sortSelect')?.value || 'default';
-
-        let data = inventoryData.filter(item => {
-            const matchSearch = item.name.toLowerCase().includes(search) || item.category.toLowerCase().includes(search);
-            const matchCat = cat === 'all' || item.category === cat;
-            const matchStat = currentStatusPill === 'all'
-                || (Array.isArray(currentStatusPill) ? currentStatusPill.includes(item.status) : item.status === currentStatusPill);
-            const matchLoc = loc === 'all' || item.location === loc;
-            const matchDep = dep === 'all' || item.department === dep;
-            return matchSearch && matchCat && matchStat && matchLoc && matchDep;
-        });
-
-        if (sortBy === 'name') data = [...data].sort((a, b) => a.name.localeCompare(b.name));
-        if (sortBy === 'status') data = [...data].sort((a, b) => a.status.localeCompare(b.status));
-        if (sortBy === 'category') data = [...data].sort((a, b) => a.category.localeCompare(b.category));
-        if (sortBy === 'date') data = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        return data;
-    }
-
-    function filterInventory() {
-        const search = document.getElementById('gearSearch')?.value?.toLowerCase() || '';
-        if (search.length > 0 && document.getElementById('inventory-section').style.display === 'none') {
-            showSection('inventory', document.querySelectorAll('.nav-item')[1]);
-            setTimeout(() => document.getElementById('gearSearch').focus(), 10);
-        }
-        renderInventory();
-    }
-
-    function filterByStatusPill(status, el) {
-        currentStatusPill = status; // 단일 문자열 ('all' 포함)
-        document.querySelectorAll('.spill').forEach(b => b.classList.remove('on'));
-        if (el) el.classList.add('on');
-        if (document.getElementById('inventory-section').style.display === 'none') {
-            showSection('inventory', document.querySelectorAll('.nav-item')[1]);
-        }
-        filterInventory();
-    }
-
-    // 배너 클릭: "수리중" + "문제발견" 동시 OR 필터
-    function filterByIssueBanner() {
-        const issueStatuses = ['수리중', '문제발견'];
-        currentStatusPill = issueStatuses;
-        document.querySelectorAll('.spill').forEach(b => {
-            b.classList.toggle('on', issueStatuses.includes(b.textContent.trim()));
-        });
-        if (document.getElementById('inventory-section').style.display === 'none') {
-            showSection('inventory', document.querySelectorAll('.nav-item')[1]);
-        }
-        filterInventory();
-    }
-
-    function toggleView(type) {
-        currentView = type;
-        document.getElementById('vbtn-grid').classList.toggle('on', type === 'grid');
-        document.getElementById('vbtn-list').classList.toggle('on', type === 'list');
-        renderInventory();
-    }
-
-    // ═══ STATS ═══
-    function updateStats() {
-        document.getElementById('total-count').innerText = inventoryData.length;
-        document.getElementById('available-count').innerText = inventoryData.filter(i => i.status === '가용').length;
-        document.getElementById('in-use-count').innerText = inventoryData.filter(i => i.status === '대여중').length;
-        document.getElementById('repair-count').innerText = inventoryData.filter(i => i.status === '수리중' || i.status === '문제발견').length;
-    }
-
-    function getStatusClass(status) {
-        switch (status) {
-            case '가용': return 'available';
-            case '대여중': return 'in-use';
-            case '수리중': return 'repair';
-            case '문제발견': return 'issue';
-            case '분실': return 'lost';
-            default: return '';
-        }
-    }
-
-    function getBgClass(icon) {
-        if (!icon) return 'default-bg';
-        if (icon.includes('volume') || icon.includes('speaker')) return 'speaker-bg';
-        if (icon.includes('microphone') || icon.includes('mic')) return 'mic-bg';
-        if (icon.includes('sliders') || icon.includes('mixer')) return 'mixer-bg';
-        if (icon.includes('link') || icon.includes('cable')) return 'cable-bg';
-        if (icon.includes('camera') || icon.includes('photo')) return 'camera-bg';
-        if (icon.includes('video') || icon.includes('film')) return 'video-bg';
-        return 'default-bg';
-    }
-
-    function getIconByCategory(category) {
-        if (!category) return 'fa-box';
-        const c = category.toLowerCase();
-        if (c.includes('음향') || c.includes('스피커') || c.includes('speaker') || c.includes('마이크') || c.includes('mic') || c.includes('믹서') || c.includes('mixer') || c.includes('케이블') || c.includes('cable')) return 'fa-volume-high';
-        if (c.includes('사진') || c.includes('photo') || c.includes('camera')) return 'fa-camera';
-        if (c.includes('영상') || c.includes('video') || c.includes('film')) return 'fa-video';
-        return 'fa-box';
-    }
-
-    // ═══ SECTION NAVIGATION ═══
-    function showSection(id, el) {
-        document.querySelectorAll('.content-section').forEach(s => s.style.display = 'none');
-        const sec = document.getElementById(`${id}-section`);
-        if (sec) sec.style.display = 'block';
-
-        if (el) {
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            el.classList.add('active');
-        }
-
-        if (id === 'inventory') renderInventory();
-        else if (id === 'stats') initStats();
-        else if (id === 'sheet') initSheetSection();
-        else initDashboard();
-    }
-
-    // ═══ MODAL ═══
-    async function openModal(id) {
-        currentSelectedId = id;
-        const item = inventoryData.find(i => i.id === id);
-        if (!item) return;
-        localPhotoDataUrls = [];
-
-        document.getElementById('modalTitle').innerText = item.name;
-        document.getElementById('modalSubtitle').innerText = `${item.category} · ${item.department}`;
-
-        const body = document.getElementById('modalBody');
-        body.innerHTML = `
-            <div class="detail-grid">
-                <div class="detail-item">
-                    <span class="dlabel">카테고리</span>
-                    <span class="dval">${item.category}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="dlabel">현재 상태</span>
-                    <span id="currentStatusTag" class="status-tag ${getStatusClass(item.status)}">${item.status}</span>
-                </div>
-                <div class="detail-item fw">
-                    <span class="dlabel">보관 / 사용 장소</span>
-                    <span class="dval"><i class="fas fa-location-dot" style="color:#cbd5e1;margin-right:6px;"></i>${item.location}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="dlabel">사용자</span>
-                    <span class="dval">${item.user}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="dlabel">부서</span>
-                    <span class="dval">${item.department}</span>
-                </div>
-                <div class="detail-item fw">
-                    <span class="dlabel">사용 목적</span>
-                    <span class="dval">${item.purpose}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="dlabel">업데이트 날짜</span>
-                    <span class="dval">${item.date}</span>
-                </div>
-            </div>
-
-            <div class="note-section">
-                <div class="note-title"><i class="fas fa-pen-to-square"></i> 상태 변경 및 메모 기록</div>
-                <div class="detail-grid">
-                    <div class="detail-item">
-                        <span class="dlabel">상태 변경</span>
-                        <select id="localStatusSelect" class="local-select">
-                            <option value="">-- 상태 선택 (선택사항) --</option>
-                            <option value="가용">가용</option>
-                            <option value="대여중">대여중</option>
-                            <option value="수리중">수리중</option>
-                            <option value="문제발견">문제발견</option>
-                            <option value="분실">분실</option>
-                        </select>
-                    </div>
-                    <div class="detail-item fw">
-                        <span class="dlabel">메모</span>
-                        <textarea id="localMemoInput" class="local-textarea" placeholder="문제 사항, 전달 내용 등을 입력하세요..."></textarea>
-                    </div>
-                    <div class="detail-item fw">
-                        <span class="dlabel">사진 첨부</span>
-                        <label for="localPhotoInput" class="photo-label">
-                            <i class="fas fa-camera"></i> 사진 선택 (여러 장 가능)
-                        </label>
-                        <input type="file" id="localPhotoInput" accept="image/*" multiple style="display:none;" onchange="previewPhoto(this)">
-                        <div id="localPhotoPreview" class="photo-preview-area"></div>
-                    </div>
-                </div>
-                <button class="note-save-btn" onclick="saveNote()"><i class="fas fa-floppy-disk"></i> 기록 저장</button>
-            </div>
-
-            <div id="notesHistoryArea"></div>
-        `;
-
-        const editBtn = document.getElementById('modalEditBtn');
-        if (item.editUrl && item.editUrl !== '-' && item.editUrl !== '') {
-            editBtn.href = item.editUrl;
-            editBtn.style.display = 'inline-flex';
-        } else {
-            editBtn.style.display = 'none';
-        }
-
-        document.getElementById('gearModal').classList.add('active');
-        await renderNotes(id);
-    }
-
-    function closeModal() {
-        document.getElementById('gearModal').classList.remove('active');
-        currentSelectedId = null;
-    }
-
-    // ═══ NOTE SYSTEM ═══
-    function previewPhoto(input) {
-        localPhotoDataUrls = [];
-        const preview = document.getElementById('localPhotoPreview');
-        preview.innerHTML = '';
-        if (!input.files || input.files.length === 0) return;
-        Array.from(input.files).forEach(file => {
-            const now = new Date();
-            const stamp = [
-                now.getFullYear(),
-                String(now.getMonth() + 1).padStart(2, '0'),
-                String(now.getDate()).padStart(2, '0')
-            ].join('') + '_' + [
-                String(now.getHours()).padStart(2, '0'),
-                String(now.getMinutes()).padStart(2, '0'),
-                String(now.getSeconds()).padStart(2, '0')
-            ].join('');
-            const fname = stamp + '_' + file.name;
-
-            const reader = new FileReader();
-            reader.onload = ev => {
-                // Canvas로 압축: 최대 480px, JPEG quality 0.45 (DriveApp 없이 시트에 직접 저장)
-                const rawImg = new Image();
-                rawImg.onload = () => {
-                    const MAX = 480;
-                    let w = rawImg.width, h = rawImg.height;
-                    if (w > MAX || h > MAX) {
-                        if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
-                        else { w = Math.round(w * MAX / h); h = MAX; }
-                    }
-                    const canvas = document.createElement('canvas');
-                    canvas.width = w; canvas.height = h;
-                    canvas.getContext('2d').drawImage(rawImg, 0, 0, w, h);
-                    const compressed = canvas.toDataURL('image/jpeg', 0.45);
-                    localPhotoDataUrls.push({ data: compressed, name: fname });
-                    const thumb = document.createElement('img');
-                    thumb.src = compressed;
-                    thumb.title = fname;
-                    preview.appendChild(thumb);
-                };
-                rawImg.src = ev.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
-    }
-
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-
-    async function saveNote() {
-        if (!currentSelectedId) return;
-        const status = document.getElementById('localStatusSelect').value;
-        const memo = document.getElementById('localMemoInput').value.trim();
-        if (!status && !memo && localPhotoDataUrls.length === 0) {
-            showNotification('상태, 메모, 사진 중 하나 이상 입력하세요.', 'error'); return;
-        }
-
-        const note = {
-            itemId: currentSelectedId,
-            id: Date.now(),
-            status: status || null,
-            memo: memo || null,
-            photos: [...localPhotoDataUrls],
-            date: new Date().toLocaleString('ko-KR')
-        };
-
-        const saveBtn = document.querySelector('.note-save-btn');
-        const originalHtml = saveBtn.innerHTML;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...';
-        saveBtn.disabled = true;
-
-        let drivePhotos = [];
-        let photoErrors = [];
-        try {
-            const saveResp = await fetch(GOOGLE_WEBAPP_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ action: 'addNote', note: note })
-            });
-            if (!saveResp.ok) throw new Error('서버 오류: ' + saveResp.status);
-            const saveResult = await saveResp.json();
-            if (saveResult && saveResult.error) throw new Error(saveResult.error);
-            if (saveResult && saveResult.photos) drivePhotos = saveResult.photos;
-            if (saveResult && saveResult.photoErrors) photoErrors = saveResult.photoErrors;
-        } catch (e) {
-            console.error('Sheet save failed:', e);
-            showNotification('저장 실패: ' + e.message, 'error');
-            saveBtn.innerHTML = originalHtml;
-            saveBtn.disabled = false;
-            return;
-        }
-
-        saveBtn.innerHTML = originalHtml;
-        saveBtn.disabled = false;
-
-        if (status) {
-            const item = inventoryData.find(i => i.id === currentSelectedId);
-            if (item) {
-                item.status = status;
-                const tag = document.getElementById('currentStatusTag');
-                if (tag) { tag.className = `status-tag ${getStatusClass(status)}`; tag.innerText = status; }
-                renderInventory(); updateStats(); initDashboard();
-            }
-        }
-
-        document.getElementById('localStatusSelect').value = '';
-        document.getElementById('localMemoInput').value = '';
-        document.getElementById('localPhotoInput').value = '';
-        document.getElementById('localPhotoPreview').innerHTML = '';
-
-        // pendingNotes에 등록 (서버 반영 전 즉시 표시용)
-        const pendingNote = {
-            itemId: note.itemId, id: note.id,
-            status: note.status || '',
-            memo: note.memo || '',
-            photos: [...note.photos], // {data, name} 객체 그대로 유지
-            date: note.date
-        };
-        if (!pendingNotes[currentSelectedId]) pendingNotes[currentSelectedId] = [];
-        pendingNotes[currentSelectedId].push(pendingNote);
-
-        localPhotoDataUrls = [];
-        showNotification('기록이 저장되었습니다.', 'success');
-        await renderNotes(currentSelectedId);
-    }
-
-    function getLocalNotes(id) {
-        try { return JSON.parse(localStorage.getItem(`notes_${id}`)) || []; }
-        catch { return []; }
-    }
-
-    function getNoteCount(id) {
-        return parseInt(localStorage.getItem(`noteCount_${id}`)) || 0;
-    }
-
-    async function deleteNote(itemId, noteId) {
-        if (!confirm('정말로 이 기록을 삭제할까요?')) return;
-
-        try {
-            const delResp = await fetch(GOOGLE_WEBAPP_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ action: 'deleteNote', itemId: itemId, noteId: noteId })
-            });
-            if (!delResp.ok) throw new Error('서버 오류: ' + delResp.status);
-            const delResult = await delResp.json();
-            if (delResult && delResult.error) throw new Error(delResult.error);
-        } catch (e) {
-            console.error('Sheet delete failed:', e);
-            showNotification('삭제 실패: ' + e.message, 'error');
-            return;
-        }
-
-        // 즉시 UI에서 제거 (gviz 캐시 반영 전)
-        deletedNoteIds.add(String(noteId));
-        if (pendingNotes[itemId]) pendingNotes[itemId] = pendingNotes[itemId].filter(n => String(n.id) !== String(noteId));
-        await renderNotes(itemId);
-        renderInventory();
-    }
-
-    async function renderNotes(id) {
-        const area = document.getElementById('notesHistoryArea');
-        if (!area) return;
-
-        // 1단계: 사진 제외 노트 텍스트만 빠르게 조회 (includePhotos 없음)
-        let sheetNotes = [];
-        try {
-            const res = await fetch(GOOGLE_WEBAPP_URL + '?action=getNotes&itemId=' + encodeURIComponent(id));
-            if (res.ok) {
-                const data = await res.json();
-                if (Array.isArray(data)) {
-                    sheetNotes = data.filter(n => n.itemId != null && String(n.itemId) === String(id));
-                }
-            }
-        } catch (e) { console.warn('Notes fetch failed:', e); }
-
-        sheetNotes = sheetNotes.filter(n => !deletedNoteIds.has(String(n.id)));
-        const sheetNoteIds = new Set(sheetNotes.map(n => String(n.id)));
-
-        const pending = (pendingNotes[id] || []).filter(
-            pn => !sheetNotes.some(sn => String(sn.id) === String(pn.id)) && !deletedNoteIds.has(String(pn.id))
-        );
-        const notes = [...sheetNotes, ...pending];
-
-        localStorage.setItem(`noteCount_${id}`, notes.length);
-        if (notes.length === 0) { area.innerHTML = ''; return; }
-
-        const items = notes.slice().sort((a, b) => b.id - a.id).map(note => {
-            const statusHtml = note.status ? `<span class="status-tag ${getStatusClass(note.status)}" style="font-size:10.5px;">${escapeHtml(note.status)}</span>` : '';
-            const memoHtml = note.memo ? `<div class="note-memo">${escapeHtml(note.memo)}</div>` : '';
-
-            let photosHtml;
-            if (sheetNoteIds.has(String(note.id))) {
-                // 시트 노트: 사진 영역 플레이스홀더 (백그라운드로 나중에 채워짐)
-                photosHtml = `<div class="note-photos-area" data-noteid="${note.id}"></div>`;
-            } else {
-                // pending 노트: 방금 저장한 것이므로 즉시 표시
-                photosHtml = note.photos?.length > 0
-                    ? `<div class="note-photos-area" data-noteid="${note.id}"><div class="note-photos">${note.photos.map(p => {
-                        const src = (p && typeof p === 'object') ? (p.data || '') : (p || '');
-                        const name = (p && typeof p === 'object') ? (p.name || '') : '';
-                        return src ? `<img src="${src}" onclick="showImageModal(this.src)" title="${escapeHtml(name) || '클릭하면 크게 보기'}">` : '';
-                    }).filter(Boolean).join('')}</div></div>`
-                    : `<div class="note-photos-area" data-noteid="${note.id}"></div>`;
-            }
-
-            return `
-                <div class="note-item">
-                    <div class="note-item-header">
-                        <div style="display:flex;align-items:center;gap:6px;">${statusHtml}</div>
-                        <div style="display:flex;align-items:center;gap:6px;">
-                            <span class="note-date">${escapeHtml(note.date)}</span>
-                            <button class="note-del-btn" onclick="deleteNote(${id},${note.id})" title="삭제"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>
-                    ${memoHtml}${photosHtml}
-                </div>`;
-        }).join('');
-
-        area.innerHTML = `
-            <div class="notes-list">
-                <div class="note-title" style="margin-top:18px; padding-top:18px; border-top:1.5px dashed #e8edf5;">
-                    <i class="fas fa-history"></i> 저장된 기록 (${notes.length}건)
-                </div>
-                ${items}
-            </div>`;
-
-        // 2단계: 사진만 백그라운드로 조회하여 플레이스홀더에 채우기 (모달이 열려 있는 동안만)
-        if (sheetNotes.length > 0) {
-            loadPhotosInBackground(id);
-        }
-    }
-
-    async function loadPhotosInBackground(id) {
-        try {
-            const res = await fetch(GOOGLE_WEBAPP_URL + '?action=getNotes&itemId=' + encodeURIComponent(id) + '&includePhotos=true');
-            if (!res.ok) return;
-            const data = await res.json();
-            if (!Array.isArray(data)) return;
-            data.forEach(note => {
-                const area = document.querySelector(`.note-photos-area[data-noteid="${note.id}"]`);
-                if (!area || !note.photos?.length) return;
-                const imgs = note.photos.map(p => {
-                    const src = (p && typeof p === 'object') ? (p.data || '') : (p || '');
-                    const name = (p && typeof p === 'object') ? (p.name || '') : '';
-                    return src ? `<img src="${src}" onclick="showImageModal(this.src)" title="${escapeHtml(name) || '클릭하면 크게 보기'}">` : '';
-                }).filter(Boolean).join('');
-                if (imgs) area.innerHTML = `<div class="note-photos">${imgs}</div>`;
-            });
-        } catch (e) { console.warn('Photo background load failed:', e); }
-    }
-
-    function showImageModal(src) {
-        document.getElementById('modalImage').src = src;
-        document.getElementById('imageModal').classList.add('active');
-    }
-
-    function closeImageModal() {
-        document.getElementById('imageModal').classList.remove('active');
-    }
-
-    // ═══ FORM MODAL ═══
-    function openFormModal(url = null) {
-        document.getElementById('formIframe').src = url || GOOGLE_FORM_URL;
-        document.getElementById('formModalTitle').innerText = url ? '장비 상태 수정' : '새 장비 등록';
-        document.getElementById('formModal').classList.add('active');
-    }
-
-    function closeFormModal() {
-        document.getElementById('formModal').classList.remove('active');
-        document.getElementById('formIframe').src = '';
-        if (GOOGLE_SHEET_API && GOOGLE_SHEET_API.trim() !== '') fetchDataFromGS();
-    }
-
-    // ═══ HISTORY MODAL ═══
-    function openHistoryModal() {
-        const list = document.getElementById('historyList');
-        list.innerHTML = '';
-        const recent = [...inventoryData].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 15);
-        recent.forEach(item => {
-            const bgc = getBgClass(item.icon);
-            const el = document.createElement('div');
-            el.className = 'history-item';
-            el.style.cursor = 'pointer';
-            el.onclick = () => { closeHistoryModal(); openModal(item.id); };
-            el.innerHTML = `
-                <div class="hist-icon ${bgc}"><i class="fas ${item.icon}"></i></div>
-                <div style="flex:1;min-width:0;">
-                    <div class="hist-name">${item.name}</div>
-                    <div class="hist-meta">${item.category} · <span class="status-tag ${getStatusClass(item.status)}" style="font-size:10px;">${item.status}</span></div>
-                </div>
-                <div style="font-size:11px;color:var(--text-muted);white-space:nowrap;">${item.date}</div>`;
-            list.appendChild(el);
-        });
-        document.getElementById('history-badge').innerText = inventoryData.length;
-        document.getElementById('historyModal').classList.add('active');
-    }
-
-    function closeHistoryModal() {
-        document.getElementById('historyModal').classList.remove('active');
-    }
-
-    // ═══ DELETE ═══
-    async function hashPassword(pw) {
-        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
-        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    async function deleteItem() {
-        if (!currentSelectedId) return;
-        const pw = prompt('장비를 삭제하려면 비밀번호를 입력하세요:');
-        if (!pw) return;
-        const hashed = await hashPassword(pw);
-        const target = 'daa35e4f1a0e43def76e13a948cbda05be2569901fa0c6d5d6342fb2bdc85028';
-        if (hashed !== target) {
-            showNotification('비밀번호가 일치하지 않습니다.', 'error');
-            return;
-        }
-        // Google Sheets에서 실제 행 삭제
-        try {
-            const resp = await fetch(GOOGLE_WEBAPP_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ action: 'deleteItem', itemId: currentSelectedId })
-            });
-            if (!resp.ok) throw new Error('서버 오류: ' + resp.status);
-            const result = await resp.json();
-            if (result && result.error) throw new Error(result.error);
-        } catch (e) {
-            showNotification('삭제 실패: ' + e.message, 'error');
-            return;
-        }
-        inventoryData = inventoryData.filter(i => i.id !== currentSelectedId);
-
-        // 삭제된 장비의 메모리 데이터 정리 (오염 방지)
-        const deletedId = currentSelectedId;
-        delete pendingNotes[deletedId];
-        localStorage.removeItem(`noteCount_${deletedId}`);
-
-        filterInventory(); updateStats(); initDashboard();
-        if (document.getElementById('stats-section').style.display === 'block') initStats();
-        closeModal(); // closeModal 내부에서 currentSelectedId = null 처리됨
-        showNotification('장비가 삭제되었습니다.', 'success');
-    }
-
-    // ═══ STATS PAGE ═══
-    function initStats() {
-        const locCounts = inventoryData.reduce((acc, i) => { acc[i.location] = (acc[i.location] || 0) + 1; return acc; }, {});
-        const depCounts = inventoryData.reduce((acc, i) => { acc[i.department] = (acc[i.department] || 0) + 1; return acc; }, {});
-        const topLoc = Object.keys(locCounts).sort((a, b) => locCounts[b] - locCounts[a])[0] || '-';
-        const topDep = Object.keys(depCounts).sort((a, b) => depCounts[b] - depCounts[a])[0] || '-';
-        const issueCount = inventoryData.filter(i => i.status === '수리중' || i.status === '분실' || i.status === '문제발견').length;
-
-        document.getElementById('stats-summary-grid').innerHTML = `
-            <div class="stat-card purple">
-                <div class="bg-glow" style="background:#a855f7;"></div>
-                <div class="stat-icon purple"><i class="fas fa-location-dot"></i></div>
-                <div class="stat-data"><span class="label">최다 보관 장소</span><h3 style="font-size:14px;letter-spacing:-0.3px;">${topLoc}</h3></div>
-            </div>
-            <div class="stat-card blue">
-                <div class="bg-glow" style="background:#3b82f6;"></div>
-                <div class="stat-icon blue"><i class="fas fa-users"></i></div>
-                <div class="stat-data"><span class="label">최다 보유 부서</span><h3 style="font-size:14px;letter-spacing:-0.3px;">${topDep}</h3></div>
-            </div>
-            <div class="stat-card red">
-                <div class="bg-glow" style="background:#ef4444;"></div>
-                <div class="stat-icon red"><i class="fas fa-triangle-exclamation"></i></div>
-                <div class="stat-data"><span class="label">리스크 장비</span><h3>${issueCount}<span style="font-size:14px;font-weight:500;margin-left:3px;">건</span></h3></div>
-            </div>`;
-
-        const statusCounts = inventoryData.reduce((acc, i) => { acc[i.status] = (acc[i.status] || 0) + 1; return acc; }, {});
-        const ctxStatus = document.getElementById('statusChart').getContext('2d');
-        if (statusChartInstance) statusChartInstance.destroy();
-        statusChartInstance = new Chart(ctxStatus, {
-            type: 'doughnut',
-            data: { labels: Object.keys(statusCounts), datasets: [{ data: Object.values(statusCounts), backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#a855f7', '#64748b'], borderWidth: 0, hoverOffset: 4 }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 10, padding: 16 } } } }
-        });
-
-        const ctxDept = document.getElementById('deptPolarChart').getContext('2d');
-        if (deptPolarChartInstance) deptPolarChartInstance.destroy();
-        deptPolarChartInstance = new Chart(ctxDept, {
-            type: 'polarArea',
-            data: { labels: Object.keys(depCounts), datasets: [{ data: Object.values(depCounts), backgroundColor: ['rgba(99,102,241,0.6)', 'rgba(59,130,246,0.6)', 'rgba(16,185,129,0.6)', 'rgba(245,158,11,0.6)', 'rgba(239,68,68,0.6)', 'rgba(168,85,247,0.6)', 'rgba(20,184,166,0.6)'] }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 10, padding: 12 } } } }
-        });
-
-        const ctxLoc = document.getElementById('locationBarChart').getContext('2d');
-        if (locationBarChartInstance) locationBarChartInstance.destroy();
-        locationBarChartInstance = new Chart(ctxLoc, {
-            type: 'bar',
-            data: { labels: Object.keys(locCounts), datasets: [{ label: '보관 장비 수', data: Object.values(locCounts), backgroundColor: '#818cf8', borderRadius: 5 }] },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f8fafc' } }, x: { ticks: { font: { size: 10 } } } }, plugins: { legend: { display: false } } }
-        });
-    }
-
-    // ═══ REFRESH ═══
-    function refreshData() {
-        const btn = document.getElementById('refreshBtn');
-        btn.classList.add('spinning');
-        setSyncStatus('syncing', '동기화 중...');
-        fetchDataFromGS().finally(() => {
-            btn.classList.remove('spinning');
-        });
-    }
-
-    function setSyncStatus(state, text) {
-        const dot = document.getElementById('syncDot');
-        const span = document.getElementById('syncText');
-        dot.className = `sync-dot ${state}`;
-        span.innerText = text;
-    }
-
-    // ═══ PRINT ═══
-    function printInventory() {
-        window.print();
-    }
-
-    // ═══ TOAST ═══
-    function showNotification(msg, type = 'info') {
-        const toast = document.getElementById('toast');
-        const icon = toast.querySelector('i');
-        document.getElementById('toastMsg').innerText = msg;
-        toast.className = `toast ${type}`;
-        icon.className = `fas ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-xmark' : 'fa-circle-info'}`;
-        toast.classList.add('show');
-        clearTimeout(toast._timer);
-        toast._timer = setTimeout(() => toast.classList.remove('show'), 3200);
-    }
-
-    // ═══ GOOGLE SHEETS SYNC ═══
-    async function fetchDataFromGS() {
-        try {
-            const res = await fetch(GOOGLE_SHEET_API);
-            if (!res.ok) throw new Error('네트워크 오류');
-            const text = await res.text();
-            const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S\w]+)\);?/);
-            if (!match) throw new Error('데이터 포맷 오류');
-
-            const json = JSON.parse(match[1]);
-            const cols = json.table.cols.map(c => c ? c.label : '');
-            const rows = json.table.rows;
-
-            const data = rows.map((row, idx) => {
-                let obj = { id: null, icon: 'fa-box', editUrl: '-' };
-                row.c.forEach((cell, i) => {
-                    if (!cell) return;
-                    let val = cell.v;
-                    if (typeof val === 'string') val = val.trim();
-                    const h = (cols[i] || '').toLowerCase();
-
-                    if (h.includes('장비명')) obj.name = val;
-                    else if (h.includes('카테고리')) { obj.category = val; obj.icon = getIconByCategory(val); }
-                    else if (h.includes('상태')) obj.status = val;
-                    else if (h.includes('위치')) obj.location = val;
-                    else if (h.includes('사용자 (실 사용자 혹은 담당교역자)')) obj.user = val;
-                    else if (h.includes('목적')) obj.purpose = val;
-                    else if (h.includes('부서')) obj.department = val;
-                    else if (h === '타임스탬프') {
-                        // ※ '사용 날짜' 컬럼(h.includes('날짜'))과 혼동하지 않도록 정확히 '타임스탬프'만 매칭
-                        // 폼 제출 타임스탬프 → 16자리 고유 ID 생성 (PPYYYYMMDDHHMMSS)
-                        // gviz 날짜 형식: "Date(2024,0,15,14,30,0)" (월은 0-based)
-                        if (cell.v && typeof cell.v === 'string' && cell.v.startsWith('Date(')) {
-                            const p = cell.v.slice(5, -1).split(',').map(Number);
-                            const tsStr =
-                                String(p[0]) +
-                                String(p[1] + 1).padStart(2, '0') +
-                                String(p[2]).padStart(2, '0') +
-                                String(p[3] || 0).padStart(2, '0') +
-                                String(p[4] || 0).padStart(2, '0') +
-                                String(p[5] || 0).padStart(2, '0');
-                            // 앞 2자리: 타임스탬프 각 자릿수 합 % 100 (결정론적, 페이지 새로고침해도 동일)
-                            const digitSum = tsStr.split('').reduce((a, c) => a + Number(c), 0);
-                            const prefix = String(digitSum % 100).padStart(2, '0');
-                            obj.id = parseInt(prefix + tsStr); // 16자리 ID
-                        }
-                        obj.date = cell.f || val;
-                        if (obj.date && typeof obj.date === 'string') {
-                            const dm = obj.date.match(/^(20\d{2}[\.\-\/] ?\d{1,2}[\.\-\/] ?\d{1,2})/);
-                            if (dm) obj.date = dm[1];
-                        }
-                    }
-                    else if (h === '수정 링크' || h.includes('edit url')) obj.editUrl = val;
-                });
-
-                if (!obj.id) obj.id = idx + 1; // 타임스탬프 없을 때 fallback
-                if (!obj.name) obj.name = '-';
-                if (!obj.category) obj.category = '기타';
-                if (!obj.status) obj.status = '-';
-                if (!obj.location) obj.location = '-';
-                if (!obj.user) obj.user = '-';
-                if (!obj.purpose) obj.purpose = '-';
-                if (!obj.department) obj.department = '-';
-                if (!obj.date) obj.date = '-';
-                return obj;
-            }).filter(item => item.name !== '-' && item.name !== '');
-
-            if (data.length > 0) {
-                inventoryData = data;
-                renderInventory(); updateStats(); initDashboard();
-                document.getElementById('history-badge').innerText = data.length;
-                const now = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-                setSyncStatus('synced', `${now} 동기화 완료`);
-                showNotification(`데이터 동기화 완료 (${data.length}건)`, 'success');
-            } else {
-                setSyncStatus('error', '데이터 없음');
-            }
-        } catch (e) {
-            console.error('Sync failed:', e);
-            setSyncStatus('error', '동기화 실패');
-            showNotification('데이터를 불러올 수 없습니다.', 'error');
-        }
-    }
-
-    // ═══ SHEET ADMIN ═══
-    let sheetAdminUnlocked = false;
-    let sheetEditItemId = null;
-    const SHEET_ADMIN_HASH = 'daa35e4f1a0e43def76e13a948cbda05be2569901fa0c6d5d6342fb2bdc85028';
-
-    function initSheetSection() {
-        renderSheetTable();
-    }
-
-    function renderSheetTable() {
-        const cols = ['장비명', '카테고리', '상태', '위치', '사용자', '사용 목적', '사용 부서', '날짜'];
-        const thead = document.getElementById('sheetTableHead');
-        const tbody = document.getElementById('sheetTableBody');
-
-        thead.innerHTML = `<tr>
-            ${cols.map(c => `<th>${c}</th>`).join('')}
-            ${sheetAdminUnlocked ? '<th>수정</th><th>삭제</th>' : ''}
-        </tr>`;
-
-        tbody.innerHTML = inventoryData.map(item => `
-            <tr>
-                <td>${item.name}</td>
-                <td>${item.category}</td>
-                <td><span class="status-tag ${getStatusClass(item.status)}">${item.status}</span></td>
-                <td>${item.location}</td>
-                <td>${item.user}</td>
-                <td>${item.purpose}</td>
-                <td>${item.department}</td>
-                <td>${item.date}</td>
-                ${sheetAdminUnlocked ? `
-                <td><button class="sheet-edit-btn" onclick="openSheetEditModal(${item.id})"><i class="fas fa-pen"></i> 수정</button></td>
-                <td><button class="sheet-del-btn" onclick="sheetDeleteItem(${item.id})"><i class="fas fa-trash"></i></button></td>
-                ` : ''}
-            </tr>
-        `).join('');
-    }
-
-    async function toggleSheetAdmin() {
-        if (sheetAdminUnlocked) {
-            sheetAdminUnlocked = false;
-            document.getElementById('sheetAdminBtn').innerHTML = '<i class="fas fa-lock"></i> 관리자 잠금';
-            document.getElementById('sheetAdminBtn').classList.remove('unlocked');
-            renderSheetTable();
-            return;
-        }
-        const pw = prompt('관리자 비밀번호를 입력하세요:');
-        if (!pw) return;
-        const hash = await hashPassword(pw);
-        if (hash !== SHEET_ADMIN_HASH) {
-            showNotification('비밀번호가 일치하지 않습니다.', 'error');
-            return;
-        }
-        sheetAdminUnlocked = true;
-        document.getElementById('sheetAdminBtn').innerHTML = '<i class="fas fa-lock-open"></i> 잠금 해제됨';
-        document.getElementById('sheetAdminBtn').classList.add('unlocked');
-        renderSheetTable();
-    }
-
-    function openSheetEditModal(itemId) {
-        const item = inventoryData.find(i => i.id === itemId);
-        if (!item) return;
-        sheetEditItemId = itemId;
-
-        const categoryOptions = ['음향', '영상', '사진', '기타'];
-        const statusOptions = ['가용', '대여중', '수리중', '문제발견', '분실'];
-
-        const fields = [
-            { key: 'name', label: '장비명', type: 'text', value: item.name },
-            { key: 'category', label: '카테고리', type: 'select', value: item.category, options: categoryOptions },
-            { key: 'status', label: '상태', type: 'select', value: item.status, options: statusOptions },
-            { key: 'location', label: '위치', type: 'text', value: item.location },
-            { key: 'user', label: '사용자', type: 'text', value: item.user },
-            { key: 'purpose', label: '사용 목적', type: 'text', value: item.purpose },
-            { key: 'department', label: '사용 부서', type: 'text', value: item.department },
-        ];
-
-        document.getElementById('sheetEditFields').innerHTML = fields.map(f => `
-            <div class="edit-field">
-                <label>${f.label}</label>
-                ${f.type === 'select'
-                ? `<select id="ef_${f.key}">${f.options.map(o => `<option value="${o}"${o === f.value ? ' selected' : ''}>${o}</option>`).join('')}</select>`
-                : `<input type="text" id="ef_${f.key}" value="${(f.value || '').replace(/"/g, '&quot;')}">`
-            }
-            </div>
-        `).join('');
-
-        document.getElementById('sheetEditModal').classList.add('active');
-    }
-
-    function closeSheetEditModal() {
-        document.getElementById('sheetEditModal').classList.remove('active');
-        sheetEditItemId = null;
-    }
-
-    async function saveSheetEdit() {
-        if (!sheetEditItemId) return;
-        const btn = document.getElementById('sheetSaveBtn');
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...';
-
-        const fields = {
-            name: document.getElementById('ef_name').value.trim(),
-            category: document.getElementById('ef_category').value,
-            status: document.getElementById('ef_status').value,
-            location: document.getElementById('ef_location').value.trim(),
-            user: document.getElementById('ef_user').value.trim(),
-            purpose: document.getElementById('ef_purpose').value.trim(),
-            department: document.getElementById('ef_department').value.trim(),
-        };
-
-        try {
-            const res = await fetch(GOOGLE_WEBAPP_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ action: 'updateItem', itemId: sheetEditItemId, fields })
-            });
-            const result = await res.json();
-            if (result.success) {
-                const item = inventoryData.find(i => i.id === sheetEditItemId);
-                if (item) Object.assign(item, fields, { icon: getIconByCategory(fields.category) });
-                renderSheetTable();
-                filterInventory();
-                updateStats();
-                initDashboard();
-                closeSheetEditModal();
-                showNotification('장비 정보가 수정되었습니다.', 'success');
-            } else {
-                showNotification('수정 실패: ' + (result.error || '알 수 없는 오류'), 'error');
-            }
-        } catch (e) {
-            showNotification('오류: ' + e.message, 'error');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-save"></i> 저장';
-        }
-    }
-
-    async function sheetDeleteItem(itemId) {
-        if (!sheetAdminUnlocked) return;
-        if (!confirm('이 장비를 삭제하시겠습니까? 관련 메모와 사진도 모두 삭제됩니다.')) return;
-        try {
-            const res = await fetch(GOOGLE_WEBAPP_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ action: 'deleteItem', itemId })
-            });
-            const result = await res.json();
-            if (result.success) {
-                inventoryData = inventoryData.filter(i => i.id !== itemId);
-                delete pendingNotes[itemId];
-                localStorage.removeItem('noteCount_' + itemId);
-                renderSheetTable();
-                filterInventory();
-                updateStats();
-                initDashboard();
-                showNotification('장비가 삭제되었습니다.', 'success');
-            } else {
-                showNotification('삭제 실패: ' + (result.error || '알 수 없는 오류'), 'error');
-            }
-        } catch (e) {
-            showNotification('오류: ' + e.message, 'error');
-        }
-    }
-</script>
+    <!-- ═══ 외부 라이브러리 ═══ -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- ═══ 앱 스크립트 (로드 순서 중요) ═══ -->
+    <script src="src/js/config.js"></script>
+    <script src="src/js/state.js"></script>
+    <script src="src/js/utils.js"></script>
+    <script src="src/js/api.js"></script>
+    <script src="src/js/modules/toast.js"></script>
+    <script src="src/js/modules/inventory.js"></script>
+    <script src="src/js/modules/dashboard.js"></script>
+    <script src="src/js/modules/notes.js"></script>
+    <script src="src/js/modules/modal.js"></script>
+    <script src="src/js/modules/stats.js"></script>
+    <script src="src/js/modules/sheet.js"></script>
+    <script src="src/js/modules/history-calendar.js"></script>
+    <script src="src/js/modules/navigation.js"></script>
+    <script src="src/js/app.js"></script>
+
+</body>
+
+</html>
