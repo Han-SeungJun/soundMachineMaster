@@ -1,0 +1,313 @@
+/* ═══ 인벤토리: 툴바 / 그리드 카드 / 리스트뷰 / 빈 상태 ═══ */
+
+/* ── Inventory Header & Toolbar ── */
+.inv-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.inv-header h1 {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.8px;
+}
+
+.inv-header .subtitle {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-top: 2px;
+}
+
+.inv-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.filter-select {
+    padding: 7px 11px;
+    border-radius: 8px;
+    border: 1.5px solid #e2e8f0;
+    font-size: 12.5px;
+    font-family: inherit;
+    background: white;
+    color: var(--text-main);
+    cursor: pointer;
+    outline: none;
+    transition: var(--t);
+}
+
+.filter-select:focus {
+    border-color: var(--primary);
+}
+
+.status-pills {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.spill {
+    padding: 5px 13px;
+    border-radius: 20px;
+    border: 1.5px solid #e2e8f0;
+    font-size: 12px;
+    font-weight: 600;
+    background: white;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--t);
+}
+
+.spill:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.spill.on {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-left: auto;
+}
+
+.result-count {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.view-toggle {
+    display: flex;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.vbtn {
+    padding: 6px 10px;
+    background: white;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 13px;
+    transition: var(--t);
+}
+
+.vbtn.on {
+    background: var(--primary);
+    color: white;
+}
+
+.vbtn:hover:not(.on) {
+    background: #f8fafc;
+}
+
+/* ── Gear Cards Grid ── */
+.inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 14px;
+}
+
+.gear-card {
+    background: white;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    border: 1.5px solid #f1f5f9;
+    transition: var(--t);
+    cursor: pointer;
+    position: relative;
+}
+
+.gear-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+    border-color: #e0e7ff;
+}
+
+.gear-accent {
+    height: 3px;
+    width: 100%;
+}
+
+.gear-accent.available { background: linear-gradient(90deg, #10b981, #34d399); }
+.gear-accent.in-use    { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.gear-accent.repair    { background: linear-gradient(90deg, #ef4444, #f87171); }
+.gear-accent.issue     { background: linear-gradient(90deg, #dc2626, #f87171); }
+.gear-accent.default   { background: linear-gradient(90deg, #cbd5e1, #94a3b8); }
+
+.gear-icon-area {
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    color: rgba(255, 255, 255, 0.92);
+    position: relative;
+    overflow: hidden;
+}
+
+.gear-icon-area i {
+    position: relative;
+    z-index: 1;
+}
+
+/* Icon background themes */
+.speaker-bg { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+.mic-bg     { background: linear-gradient(135deg, #3b82f6, #06b6d4); }
+.mixer-bg   { background: linear-gradient(135deg, #10b981, #059669); }
+.cable-bg   { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.camera-bg  { background: linear-gradient(135deg, #ec4899, #f43f5e); }
+.video-bg   { background: linear-gradient(135deg, #ef4444, #f97316); }
+.default-bg { background: linear-gradient(135deg, #64748b, #475569); }
+
+.gear-note-dot {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    background: #f59e0b;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: white;
+    font-weight: 800;
+    z-index: 2;
+    border: 2px solid white;
+}
+
+.gear-status-overlay {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    z-index: 2;
+}
+
+.gear-body {
+    padding: 13px 15px 15px;
+}
+
+.gear-cat {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+}
+
+.gear-name {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    line-height: 1.3;
+}
+
+.gear-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.gear-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.gear-meta-row i {
+    width: 13px;
+    color: #cbd5e1;
+    font-size: 10.5px;
+}
+
+/* ── List View ── */
+.list-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.list-table th {
+    font-size: 10.5px;
+    padding: 9px 14px;
+}
+
+.list-table td {
+    padding: 11px 14px;
+    vertical-align: middle;
+}
+
+.name-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mini-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.list-note-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 5px;
+}
+
+/* ── Empty State ── */
+.empty-state {
+    text-align: center;
+    padding: 56px 20px;
+    color: var(--text-muted);
+}
+
+.empty-state i {
+    font-size: 44px;
+    color: #e2e8f0;
+    margin-bottom: 14px;
+    display: block;
+}
+
+.empty-state h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 5px;
+}
+
+.empty-state p {
+    font-size: 13.5px;
+}
