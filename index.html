@@ -307,17 +307,18 @@
 
                 <div class="cal-legend">
                     <div class="cal-legend-item">
-                        <div class="cal-legend-dot" style="background:rgba(99,102,241,0.4);"></div>음향
+                        <div class="cal-legend-dot" style="background:rgba(99,102,241,0.75);border-radius:50%;"></div>음향
                     </div>
                     <div class="cal-legend-item">
-                        <div class="cal-legend-dot" style="background:rgba(59,130,246,0.4);"></div>영상
+                        <div class="cal-legend-dot" style="background:rgba(59,130,246,0.75);border-radius:50%;"></div>영상
                     </div>
                     <div class="cal-legend-item">
-                        <div class="cal-legend-dot" style="background:rgba(236,72,153,0.4);"></div>사진
+                        <div class="cal-legend-dot" style="background:rgba(236,72,153,0.75);border-radius:50%;"></div>사진
                     </div>
                     <div class="cal-legend-item">
-                        <div class="cal-legend-dot" style="background:rgba(100,116,139,0.3);"></div>기타
+                        <div class="cal-legend-dot" style="background:rgba(100,116,139,0.55);border-radius:50%;"></div>기타
                     </div>
+                    <span style="font-size:11px;color:var(--text-muted);margin-left:4px;">· 날짜를 클릭하면 상세 내역을 볼 수 있습니다</span>
                 </div>
             </section>
 
@@ -395,18 +396,40 @@
         </div>
     </div>
 
-    <!-- ═══ HISTORY MODAL ═══ -->
+    <!-- ═══ HISTORY MODAL (최근 7일) ═══ -->
     <div id="historyModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h2><i class="fas fa-clock-rotate-left" style="color:var(--primary);margin-right:8px;"></i>업데이트 히스토리</h2>
+                <div>
+                    <h2><i class="fas fa-clock-rotate-left" style="color:var(--primary);margin-right:8px;"></i>최근 7일 히스토리</h2>
+                    <div class="mh-sub" style="margin-top:2px;">생성·수정·삭제·상태변경 등 최근 일주일 이력</div>
+                </div>
                 <button class="close-btn" onclick="closeHistoryModal()"><i class="fas fa-times"></i></button>
             </div>
-            <div class="modal-body" style="max-height:420px;">
+            <div class="modal-body" style="max-height:460px;">
                 <div id="historyList"></div>
             </div>
             <div class="modal-footer">
                 <button class="secondary-btn" onclick="closeHistoryModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ DAY DETAIL MODAL ═══ -->
+    <div id="dayDetailModal" class="modal-overlay">
+        <div class="modal-content" style="max-width:520px;">
+            <div class="modal-header">
+                <div>
+                    <h2 id="dayDetailTitle" style="font-size:17px;">사용 내역</h2>
+                    <div class="mh-sub" style="margin-top:2px;">부서별 장비 사용 상세 내역</div>
+                </div>
+                <button class="close-btn" onclick="closeDayDetailModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="max-height:480px;">
+                <div id="dayDetailList"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="secondary-btn" onclick="closeDayDetailModal()">닫기</button>
             </div>
         </div>
     </div>
