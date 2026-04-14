@@ -19,6 +19,7 @@ function refreshData() {
     const btn = document.getElementById('refreshBtn');
     btn.classList.add('spinning');
     setSyncStatus('syncing', '동기화 중...');
+    if (typeof resetHistoryCache === 'function') resetHistoryCache();
     fetchDataFromGS().finally(() => {
         btn.classList.remove('spinning');
     });
@@ -99,8 +100,6 @@ async function fetchDataFromGS() {
             renderInventory();
             updateStats();
             initDashboard();
-            document.getElementById('history-badge').innerText = data.length;
-
             const now = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
             setSyncStatus('synced', `${now} 동기화 완료`);
             showNotification(`데이터 동기화 완료 (${data.length}건)`, 'success');

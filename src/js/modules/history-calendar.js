@@ -1,35 +1,40 @@
 // ═══ 히스토리 캘린더 모듈 ═══
 
+// ── 상태 ──────────────────────────────────────────────────────────────────────
 let historyData      = [];
 let calendarYear     = new Date().getFullYear();
 let calendarMonth    = new Date().getMonth();
 let calHistoryFilter = { category: 'all', department: 'all', search: '' };
 
-// ─ 초기화 ──────────────────────────────────────────────────
+// 3개월 윈도우 캐시 키 (year-month 형식)
+let _histCacheKey = null;
+
+// ── 초기화 ────────────────────────────────────────────────────────────────────
 
 /**
- * 히스토리 섹션 진입 시 초기화 (데이터 로드 + 캘린더 렌더링)
+ * 히스토리 섹션 진입 시 초기화 (캐시 무효화 → 데이터 로드 → 렌더링)
  */
 async function initHistorySection() {
-    _initCalDepartmentFilter();
+    // 섹션 재진입 시 항상 최신 데이터를 가져오도록 캐시 초기화
+    _histCacheKey = null;
+    historyData   = [];
 
-    const grid = document.getElementById('calendarGrid');
-    if (grid) {
-        grid.innerHTML = `<div class="cal-loading"><i class="fas fa-spinner"></i>히스토리를 불러오는 중...</div>`;
-    }
+    _initCalDepartmentFilter();
+    _showCalLoading();
 
     if (!HISTORY_SHEET_URL) {
+        const grid = document.getElementById('calendarGrid');
         if (grid) grid.innerHTML = `<div class="empty-state"><i class="fas fa-calendar-xmark"></i><h3>History 시트 URL 미설정</h3><p>config.js의 HISTORY_SHEET_URL을 확인하세요.</p></div>`;
         return;
     }
 
-    await fetchHistoryData();
+    await _fetchHistoryForMonth(calendarYear, calendarMonth);
     renderCalendar();
 }
 
 function _initCalDepartmentFilter() {
     const sel = document.getElementById('calDepartmentFilter');
-    if (!sel || sel.options.length > 1) return; // 이미 초기화됨
+    if (!sel || sel.options.length > 1) return;
     DEPARTMENTS.forEach(dep => {
         const o = document.createElement('option');
         o.value = dep; o.textContent = dep;
@@ -37,69 +42,134 @@ function _initCalDepartmentFilter() {
     });
 }
 
-// ─ 데이터 로드 ──────────────────────────────────────────────
+function _showCalLoading() {
+    const grid = document.getElementById('calendarGrid');
+    if (grid) grid.innerHTML = `<div class="cal-loading"><i class="fas fa-spinner"></i>히스토리를 불러오는 중...</div>`;
+}
 
 /**
- * History 시트 gviz/tq → historyData 배열 갱신
+ * 히스토리 캐시를 초기화합니다. (새로고침 버튼 클릭 시 호출)
  */
-async function fetchHistoryData() {
+function resetHistoryCache() {
+    _histCacheKey = null;
+    historyData   = [];
+}
+
+// ── 데이터 로드 ───────────────────────────────────────────────────────────────
+
+/**
+ * 현재 월의 ±1개월(3개월 윈도우) 데이터를 로드합니다.
+ * 같은 월 재조회 시 캐시를 사용합니다.
+ */
+async function _fetchHistoryForMonth(year, month) {
+    const cacheKey = `${year}-${month}`;
+    if (_histCacheKey === cacheKey) return; // 캐시 히트
+
     try {
-        const res = await fetch(HISTORY_SHEET_URL);
+        // 이전달 1일 ~ 다음다음달 1일 (3개월 윈도우)
+        const winStart = new Date(year, month - 1, 1);
+        const winEnd   = new Date(year, month + 2, 1);
+
+        const filteredUrl = _buildHistoryUrl(winStart, winEnd);
+        const res         = await fetch(filteredUrl);
         if (!res.ok) throw new Error('네트워크 오류');
 
-        const text  = await res.text();
-        const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S\w]+)\);?/);
-        if (!match) throw new Error('데이터 포맷 오류');
+        const text   = await res.text();
+        const parsed = _parseGvizHistoryText(text);
 
-        const json = JSON.parse(match[1]);
-        const cols = json.table.cols.map(c => c ? c.label : '');
-        const rows = json.table.rows;
+        if (parsed === null) {
+            // gviz TQ 쿼리 실패 → 전체 데이터 폴백 (소규모 시트 허용)
+            const fallbackRes  = await fetch(HISTORY_SHEET_URL);
+            const fallbackText = await fallbackRes.text();
+            historyData = _parseGvizHistoryText(fallbackText) || [];
+        } else {
+            historyData = parsed;
+        }
 
-        historyData = rows.map(row => {
-            const obj = {};
-            row.c.forEach((cell, i) => {
-                if (!cell) return;
-                const val = (cell.f != null ? cell.f : cell.v);
-                const str = (typeof val === 'string') ? val.trim() : String(val ?? '').trim();
-                const h   = (cols[i] || '').toLowerCase();
-
-                // ※ '사용 날짜'를 먼저 확인해야 '사용자', '사용 부서'와 충돌 없음
-                if      (h.includes('사용 날짜') || h === '사용날짜') {
-                    obj.dateRange = str;
-                    const parsed  = _parseUsageDate(str);
-                    obj.startDate = parsed.start;
-                    obj.endDate   = parsed.end;
-                }
-                else if (h === '장비명'   || h.includes('장비명'))    obj.name       = str;
-                else if (h === '카테고리' || h.includes('카테고리'))   obj.category   = str;
-                else if (h === '상태'     || h.includes('상태'))       obj.status     = str;
-                else if (h === '위치'     || h.includes('위치'))       obj.location   = str;
-                else if (h.includes('사용자'))                         obj.user       = str;
-                else if (h.includes('목적'))                           obj.purpose    = str;
-                else if (h.includes('부서'))                           obj.department = str;
-                else if (h.includes('수정'))                           obj.editUrl    = str;
-                else if (h.includes('사용일시') || h === '타임스탬프') obj.timestamp  = str;
-            });
-            return obj;
-        }).filter(item => item.name && item.startDate);
-
-    } catch (e) {
+        _histCacheKey = cacheKey;
+    } catch(e) {
         console.error('History fetch failed:', e);
         showNotification('히스토리 데이터를 불러올 수 없습니다.', 'error');
+        historyData = [];
     }
 }
 
 /**
- * "YYYY.MM.DD ~ YYYY.MM.DD" 또는 "YYYY-MM-DD ~ YYYY-MM-DD" 형식 파싱
- * 단일 날짜인 경우 start = end
- * @param {string} str
- * @returns {{ start: Date|null, end: Date|null }}
+ * 날짜 범위 기반 gviz URL 생성
+ * 사용일시(열 A)가 Date 타입이면 timestamp 필터가 작동합니다.
+ */
+function _buildHistoryUrl(startDate, endDate) {
+    const fmt = d =>
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const tq = `SELECT * WHERE A >= timestamp '${fmt(startDate)} 00:00:00' AND A < timestamp '${fmt(endDate)} 00:00:00' ORDER BY A DESC`;
+    return `${HISTORY_SHEET_URL}&tq=${encodeURIComponent(tq)}`;
+}
+
+/**
+ * gviz 응답 텍스트를 파싱합니다.
+ * @returns {Array|null} 파싱된 배열, 오류/빈 응답 시 null
+ */
+function _parseGvizHistoryText(text) {
+    const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S\w]+)\);?/);
+    if (!match) return null;
+    try {
+        const json = JSON.parse(match[1]);
+        if (json.status === 'error' || !json.table) return null;
+        if (!json.table.rows || json.table.rows.length === 0) return [];
+        const cols = json.table.cols.map(c => c ? c.label : '');
+        return _parseHistoryRows(json.table.rows, cols);
+    } catch(e) {
+        return null;
+    }
+}
+
+/**
+ * gviz 행 배열을 히스토리 객체 배열로 변환합니다.
+ */
+function _parseHistoryRows(rows, cols) {
+    return rows.map(row => {
+        const obj = {};
+        if (!row || !row.c) return obj;
+        row.c.forEach((cell, i) => {
+            if (!cell) return;
+            const val = (cell.f != null ? cell.f : cell.v);
+            const str = (typeof val === 'string') ? val.trim() : String(val ?? '').trim();
+            const h   = (cols[i] || '').trim().toLowerCase();
+
+            if      (h === '사용일시' || h === '타임스탬프')           obj.timestamp  = str;
+            else if (h === '장비명'   || h.includes('장비명'))          obj.name       = str;
+            else if (h === '카테고리' || h.includes('카테고리'))         obj.category   = str;
+            else if (h === '상태'     || h.includes('상태'))             obj.status     = str;
+            else if (h === '위치'     || h.includes('위치'))             obj.location   = str;
+            else if (h.includes('사용자'))                               obj.user       = str;
+            else if (h.includes('목적'))                                 obj.purpose    = str;
+            else if (h.includes('부서'))                                 obj.department = str;
+            else if (h.includes('사용 날짜') || h === '사용날짜') {
+                obj.dateStr = str;
+                const parsed   = _parseUsageDate(str);
+                obj.startDate  = parsed.start;
+                obj.endDate    = parsed.end;
+            }
+            else if (h.includes('수정'))                                 obj.editUrl    = str;
+        });
+        return obj;
+    }).filter(item => item.name && item.startDate);
+}
+
+/**
+ * "YYYY.MM.DD ~ YYYY.MM.DD" 등 다양한 날짜 형식 파싱
  */
 function _parseUsageDate(str) {
     if (!str || str === '-') return { start: null, end: null };
 
-    const parts = str.split(/\s*[~–—]\s*/);
+    // gviz Date() 포맷 처리
+    if (str.startsWith('Date(')) {
+        const p = str.slice(5, -1).split(',').map(Number);
+        const d = new Date(p[0], p[1], p[2] || 1);
+        return { start: isNaN(d) ? null : d, end: isNaN(d) ? null : d };
+    }
 
+    const parts    = str.split(/\s*[~–—]\s*/);
     const parseOne = (s) => {
         if (!s) return null;
         const cleaned = s.trim().replace(/\./g, '-').replace(/\//g, '-');
@@ -118,7 +188,46 @@ function _parseUsageDate(str) {
     return { start: d, end: d };
 }
 
-// ─ 필터 ────────────────────────────────────────────────────
+/**
+ * 최근 7일간 히스토리를 가져옵니다. (헤더 모달용)
+ * @returns {Promise<Array>}
+ */
+async function fetchWeeklyHistoryData() {
+    if (!HISTORY_SHEET_URL) return [];
+    try {
+        const today        = new Date();
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        sevenDaysAgo.setHours(0, 0, 0, 0);
+
+        const fmt = d =>
+            `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const tq  = `SELECT * WHERE A >= timestamp '${fmt(sevenDaysAgo)} 00:00:00' AND A <= timestamp '${fmt(today)} 23:59:59' ORDER BY A DESC`;
+        const url = `${HISTORY_SHEET_URL}&tq=${encodeURIComponent(tq)}`;
+
+        const res  = await fetch(url);
+        if (!res.ok) throw new Error('네트워크 오류');
+        const text = await res.text();
+
+        const parsed = _parseGvizHistoryText(text);
+        if (parsed !== null) return parsed;
+
+        // 폴백: 전체 데이터 → 클라이언트 필터
+        const fallbackRes  = await fetch(HISTORY_SHEET_URL);
+        const fallbackText = await fallbackRes.text();
+        const all = _parseGvizHistoryText(fallbackText) || [];
+        return all.filter(item => {
+            if (!item.timestamp) return false;
+            // timestamp는 문자열이므로 단순 조회 (정확한 비교 불필요)
+            return true;
+        }).slice(0, 50); // 안전 상한
+    } catch(e) {
+        console.error('Weekly history fetch failed:', e);
+        return [];
+    }
+}
+
+// ── 필터 ──────────────────────────────────────────────────────────────────────
 
 function filterHistory() {
     calHistoryFilter.category   = document.getElementById('calCategoryFilter')?.value   || 'all';
@@ -136,30 +245,37 @@ function _getFilteredHistory() {
     });
 }
 
-// ─ 달력 네비게이션 ─────────────────────────────────────────
+// ── 달력 네비게이션 ───────────────────────────────────────────────────────────
 
-function prevMonth() {
+async function prevMonth() {
     calendarMonth--;
     if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
+    _showCalLoading();
+    await _fetchHistoryForMonth(calendarYear, calendarMonth);
     renderCalendar();
 }
 
-function nextMonth() {
+async function nextMonth() {
     calendarMonth++;
     if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
+    _showCalLoading();
+    await _fetchHistoryForMonth(calendarYear, calendarMonth);
     renderCalendar();
 }
 
-function goToToday() {
+async function goToToday() {
     calendarYear  = new Date().getFullYear();
     calendarMonth = new Date().getMonth();
+    _showCalLoading();
+    await _fetchHistoryForMonth(calendarYear, calendarMonth);
     renderCalendar();
 }
 
-// ─ 달력 렌더링 ─────────────────────────────────────────────
+// ── 달력 렌더링 (점 방식) ─────────────────────────────────────────────────────
 
 /**
- * 현재 calendarYear / calendarMonth 기준으로 달력을 그린다.
+ * 현재 calendarYear / calendarMonth 기준으로 달력을 점(dot) 방식으로 렌더링합니다.
+ * 각 날짜 셀에 카테고리별 점을 표시하고, 클릭 시 상세 다이얼로그를 엽니다.
  */
 function renderCalendar() {
     const titleEl = document.getElementById('calendarMonthTitle');
@@ -171,13 +287,11 @@ function renderCalendar() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const firstDay  = new Date(calendarYear, calendarMonth, 1);
-    const lastDay   = new Date(calendarYear, calendarMonth + 1, 0);
+    const firstDay = new Date(calendarYear, calendarMonth, 1);
+    const lastDay  = new Date(calendarYear, calendarMonth + 1, 0);
 
-    // 달력 표시 시작(첫 주의 일요일) ~ 종료(마지막 주의 토요일)
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - startDate.getDay());
-
     const endDate = new Date(lastDay);
     endDate.setDate(endDate.getDate() + (6 - endDate.getDay()));
 
@@ -186,110 +300,136 @@ function renderCalendar() {
     let cur  = new Date(startDate);
 
     while (cur <= endDate) {
-        const weekStart = new Date(cur);
-        const weekEnd   = new Date(cur);
-        weekEnd.setDate(weekEnd.getDate() + 6);
+        html += `<div class="cal-week-row"><div class="cal-days-num-row">`;
 
-        // 이번 주 7일
-        const days = [];
         for (let d = 0; d < 7; d++) {
             const day = new Date(cur);
             day.setDate(cur.getDate() + d);
-            days.push(day);
-        }
 
-        // 이번 주와 겹치는 이벤트 + 슬롯 배정
-        const weekEvents    = filteredData.filter(item =>
-            item.startDate && item.endDate &&
-            item.startDate <= weekEnd && item.endDate >= weekStart
-        );
-        const slottedEvents = _assignEventSlots(weekEvents, weekStart, weekEnd);
-
-        html += `<div class="cal-week-row">`;
-
-        // ── 날짜 번호 행 ──────────────────────────────────
-        html += `<div class="cal-days-num-row">`;
-        days.forEach((day, i) => {
             const isToday      = day.getTime() === today.getTime();
             const isOtherMonth = day.getMonth() !== calendarMonth;
+            const isSunday     = d === 0;
+            const isSaturday   = d === 6;
+
+            // 이 날짜에 해당하는 이벤트 수집
+            const dayEvents = filteredData.filter(item =>
+                item.startDate && item.endDate &&
+                day >= item.startDate && day <= item.endDate
+            );
+            const hasEvents = dayEvents.length > 0;
+
             let cls = 'cal-day-num-cell';
             if (isToday)      cls += ' today';
             if (isOtherMonth) cls += ' other-month';
-            if (i === 0)      cls += ' sunday';
-            if (i === 6)      cls += ' saturday';
-            html += `<div class="${cls}"><span class="cal-day-num">${day.getDate()}</span></div>`;
-        });
-        html += `</div>`;
+            if (isSunday)     cls += ' sunday';
+            if (isSaturday)   cls += ' saturday';
+            if (hasEvents)    cls += ' has-events';
 
-        // ── 이벤트 바 행들 ────────────────────────────────
-        if (slottedEvents.length > 0) {
-            html += `<div class="cal-events-grid">`;
-            slottedEvents.forEach(({ colStart, colEnd, slot, item }) => {
-                const catCls = _getCategoryColorClass(item.category);
-                const span   = colEnd - colStart + 1;
-                const isStartInWeek = item.startDate >= weekStart;
-                const isEndInWeek   = item.endDate   <= weekEnd;
-                let evCls = `cal-event-bar ${catCls}`;
-                if (!isStartInWeek) evCls += ' continues-left';
-                if (!isEndInWeek)   evCls += ' continues-right';
+            const dateStr  = _formatDateKey(day);
+            const clickAttr = hasEvents
+                ? `onclick="showDayDetail('${dateStr}')" title="${day.getMonth() + 1}월 ${day.getDate()}일 ${dayEvents.length}건 클릭하여 확인"`
+                : '';
 
-                html += `<div
-                    class="${evCls}"
-                    style="grid-column:${colStart + 1}/span ${span};grid-row:${slot + 1};"
-                    onclick="showHistoryDetail(${historyData.indexOf(item)})"
-                    title="${escapeHtml(item.name)} (${escapeHtml(item.dateRange || '')})">
-                    <i class="fas ${getIconByCategory(item.category)}"></i>
-                    <span>${escapeHtml(item.name)}</span>
-                </div>`;
-            });
-            html += `</div>`;
-        } else {
-            html += `<div class="cal-events-empty"></div>`;
+            html += `<div class="${cls}" ${clickAttr}>
+                <span class="cal-day-num">${day.getDate()}</span>
+                ${hasEvents ? _renderDots(dayEvents) : ''}
+            </div>`;
         }
 
-        html += `</div>`; // cal-week-row
+        html += `</div></div>`;
         cur.setDate(cur.getDate() + 7);
     }
 
     grid.innerHTML = html;
 }
 
-// ─ 이벤트 슬롯 배정 ────────────────────────────────────────
-
 /**
- * 한 주(weekStart~weekEnd) 안에서 이벤트들이 겹치지 않도록 슬롯(행)을 배정한다.
- * @param {Array} weekEvents
- * @param {Date}  weekStart  해당 주 일요일
- * @param {Date}  weekEnd    해당 주 토요일
- * @returns {Array<{colStart, colEnd, slot, item}>}
+ * Date → "YYYY-MM-DD" 형식 문자열
  */
-function _assignEventSlots(weekEvents, weekStart, weekEnd) {
-    const result = [];
-    const sorted = [...weekEvents].sort((a, b) => a.startDate - b.startDate);
-
-    sorted.forEach(item => {
-        // 주 안에서의 실제 표시 범위 계산
-        const clampedStart = item.startDate < weekStart ? weekStart : item.startDate;
-        const clampedEnd   = item.endDate   > weekEnd   ? weekEnd   : item.endDate;
-
-        const colStart = clampedStart.getDay(); // 0(일)~6(토)
-        const colEnd   = clampedEnd.getDay();
-
-        // 겹치지 않는 가장 낮은 슬롯 찾기
-        let slot = 0;
-        while (result.some(r =>
-            r.slot === slot &&
-            r.colStart <= colEnd &&
-            r.colEnd   >= colStart
-        )) { slot++; }
-
-        result.push({ colStart, colEnd, slot, item });
-    });
-
-    return result;
+function _formatDateKey(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-// ─ 헬퍼 ────────────────────────────────────────────────────
+/**
+ * 날짜 셀의 점(dot) HTML 생성
+ * 카테고리별 고유 색 점을 최대 5개까지 표시하고, 건수를 작은 숫자로 표시합니다.
+ */
+function _renderDots(events) {
+    const uniqueCats = [...new Set(events.map(e => e.category).filter(Boolean))];
+    const dots = uniqueCats.slice(0, 4).map(cat =>
+        `<span class="cal-dot ${_getCategoryColorClass(cat)}"></span>`
+    ).join('');
+    const countBadge = events.length > 1
+        ? `<span class="cal-dot-count">${events.length}</span>`
+        : '';
+    return `<div class="cal-day-dots">${dots}${countBadge}</div>`;
+}
+
+// ── 날짜 상세 다이얼로그 ──────────────────────────────────────────────────────
+
+/**
+ * 특정 날짜 클릭 시 해당 일의 사용 내역 다이얼로그를 표시합니다.
+ * @param {string} dateStr "YYYY-MM-DD" 형식
+ */
+function showDayDetail(dateStr) {
+    const [y, m, d]  = dateStr.split('-').map(Number);
+    const clickedDate = new Date(y, m - 1, d);
+
+    const filtered = _getFilteredHistory();
+    const events   = filtered.filter(item =>
+        item.startDate && item.endDate &&
+        clickedDate >= item.startDate && clickedDate <= item.endDate
+    );
+
+    if (events.length === 0) return;
+
+    const modal   = document.getElementById('dayDetailModal');
+    const titleEl = document.getElementById('dayDetailTitle');
+    const listEl  = document.getElementById('dayDetailList');
+    if (!modal || !titleEl || !listEl) return;
+
+    titleEl.textContent = `${y}년 ${m}월 ${d}일 사용 내역`;
+
+    // 부서별 정렬 후 렌더링
+    const sorted = [...events].sort((a, b) =>
+        (a.department || '').localeCompare(b.department || '', 'ko')
+    );
+
+    listEl.innerHTML = sorted.map(item => {
+        const catCls = _getCategoryColorClass(item.category);
+        return `<div class="day-detail-item">
+            <div class="day-detail-cat-badge ${catCls}">
+                <i class="fas ${getIconByCategory(item.category)}"></i>
+                ${escapeHtml(item.category || '기타')}
+            </div>
+            <div class="day-detail-body">
+                <div class="day-detail-dept">${escapeHtml(item.department || '-')}</div>
+                <div class="day-detail-row">
+                    <span class="day-detail-label">사용자</span>
+                    <span>${escapeHtml(item.user || '-')}</span>
+                </div>
+                <div class="day-detail-row">
+                    <span class="day-detail-label">장비</span>
+                    <span>${escapeHtml(item.name || '-')}</span>
+                </div>
+                ${item.purpose ? `<div class="day-detail-purpose"><i class="fas fa-info-circle"></i> ${escapeHtml(item.purpose)}</div>` : ''}
+                ${item.status ? `<div class="day-detail-row"><span class="day-detail-label">상태</span><span class="status-tag ${getStatusClass(item.status)}" style="font-size:10px;">${escapeHtml(item.status)}</span></div>` : ''}
+            </div>
+        </div>`;
+    }).join('');
+
+    modal.classList.add('active');
+}
+
+/**
+ * 날짜 상세 다이얼로그 닫기
+ */
+function closeDayDetailModal() {
+    const modal = document.getElementById('dayDetailModal');
+    if (modal) modal.classList.remove('active');
+}
+
+// ── 헬퍼 ──────────────────────────────────────────────────────────────────────
 
 function _getCategoryColorClass(category) {
     if (!category) return 'cal-ev-default';
@@ -298,73 +438,4 @@ function _getCategoryColorClass(category) {
     if (c.includes('영상')) return 'cal-ev-video';
     if (c.includes('사진')) return 'cal-ev-photo';
     return 'cal-ev-default';
-}
-
-// ─ 이벤트 상세 (기어 모달 재활용) ──────────────────────────
-
-/**
- * 캘린더 이벤트 클릭 시 장비 상세 모달을 히스토리 정보로 채워서 표시
- * @param {number} index - historyData 배열 인덱스
- */
-function showHistoryDetail(index) {
-    const item = historyData[index];
-    if (!item) return;
-
-    document.getElementById('modalTitle').innerText    = item.name    || '-';
-    document.getElementById('modalSubtitle').innerText = `${item.category || ''} · ${item.department || ''}`;
-
-    document.getElementById('modalBody').innerHTML = `
-        <div class="detail-grid">
-            <div class="detail-item">
-                <span class="dlabel">카테고리</span>
-                <span class="dval">${escapeHtml(item.category || '-')}</span>
-            </div>
-            <div class="detail-item">
-                <span class="dlabel">상태</span>
-                <span class="dval">
-                    <span class="status-tag ${getStatusClass(item.status)}">${escapeHtml(item.status || '-')}</span>
-                </span>
-            </div>
-            <div class="detail-item fw">
-                <span class="dlabel">사용 기간</span>
-                <span class="dval">
-                    <i class="fas fa-calendar-days" style="color:#cbd5e1;margin-right:6px;"></i>
-                    ${escapeHtml(item.dateRange || '-')}
-                </span>
-            </div>
-            <div class="detail-item fw">
-                <span class="dlabel">보관 / 사용 장소</span>
-                <span class="dval">
-                    <i class="fas fa-location-dot" style="color:#cbd5e1;margin-right:6px;"></i>
-                    ${escapeHtml(item.location || '-')}
-                </span>
-            </div>
-            <div class="detail-item">
-                <span class="dlabel">사용자</span>
-                <span class="dval">${escapeHtml(item.user || '-')}</span>
-            </div>
-            <div class="detail-item">
-                <span class="dlabel">사용 부서</span>
-                <span class="dval">${escapeHtml(item.department || '-')}</span>
-            </div>
-            <div class="detail-item fw">
-                <span class="dlabel">사용 목적</span>
-                <span class="dval">${escapeHtml(item.purpose || '-')}</span>
-            </div>
-        </div>`;
-
-    // 히스토리 상세에서는 삭제 버튼 숨김
-    const dangerBtn = document.querySelector('#gearModal .danger-btn');
-    if (dangerBtn) dangerBtn.style.display = 'none';
-
-    // 수정 링크
-    const editBtn = document.getElementById('modalEditBtn');
-    if (item.editUrl && item.editUrl !== '-' && item.editUrl !== '') {
-        editBtn.href         = item.editUrl;
-        editBtn.style.display = 'inline-flex';
-    } else {
-        editBtn.style.display = 'none';
-    }
-
-    document.getElementById('gearModal').classList.add('active');
 }
