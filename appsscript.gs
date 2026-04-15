@@ -13,8 +13,8 @@ const SPREADSHEET_ID = '1AWw7zH5PAGLLMgpQ5WfSN4-R7Cr2E2VeFxstQoxAU1k';
 // ─── 수정 링크 생성 ───────────────────────────────────────────────────────────
 
 /**
- * 폼 응답과 시트 행을 타임스탬프 기준으로 매핑하여 수정 링크를 K열에 기록합니다.
- * 신규 행(수정링크 미설정)인 경우에만 History에도 자동 기록합니다.
+ * 폼 응답과 시트 행을 타임스탬프 기준으로 매핑하여 수정 링크를 J열에 기록합니다.
+ * PropertiesService로 행 컨텐츠 해시를 관리하여 신규 등록과 수정 모두 History에 기록합니다.
  */
 function populateEditLinks() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -50,6 +50,9 @@ function populateEditLinks() {
     return '';
   };
 
+  // PropertiesService로 행 컨텐츠 변경 감지 (신규 등록 + 수정 모두 History 기록)
+  const props = PropertiesService.getScriptProperties();
+
   for (let i = 1; i < data.length; i++) {
     if (!data[i][0]) continue;
     const cellTs = new Date(data[i][0]).getTime();
@@ -63,12 +66,25 @@ function populateEditLinks() {
     }
 
     if (editUrl) {
-      const isNewRow = !data[i][linkColIdx]; // 수정링크 없는 신규 행
       if (data[i][linkColIdx] !== editUrl) {
         sheet.getRange(i + 1, linkColIdx + 1).setValue(editUrl);
       }
-      // 신규 등록 행일 때만 History 기록
-      if (isNewRow) {
+
+      // 행 컨텐츠 직렬화 → 이전 값과 비교하여 변경 감지
+      const rowKey = 'row_' + cellTs;
+      const rowContent = [
+        getField(data[i], '장비명'),
+        getField(data[i], '카테고리'),
+        getField(data[i], '상태'),
+        getField(data[i], '위치'),
+        getField(data[i], '사용자'),
+        getField(data[i], '사용 목적'),
+        getField(data[i], '사용 부서'),
+        getField(data[i], '사용 날짜')
+      ].join('|');
+
+      const prevContent = props.getProperty(rowKey) || '';
+      if (prevContent !== rowContent) {
         writeHistoryRow(
           getField(data[i], '장비명'),
           getField(data[i], '카테고리'),
@@ -78,8 +94,10 @@ function populateEditLinks() {
           getField(data[i], '사용 목적'),
           getField(data[i], '사용 부서'),
           getField(data[i], '사용 날짜'),
-          editUrl
+          editUrl,
+          '' // 폼 제출/수정은 noteId 없음
         );
+        props.setProperty(rowKey, rowContent);
       }
     }
   }
@@ -99,9 +117,9 @@ function getHistorySheet() {
     sheet.appendRow([
       '사용일시', '장비명', '카테고리', '상태', '위치',
       '사용자 (실 사용자 혹은 담당교역자)', '사용 목적',
-      '사용 부서', '사용 날짜', '수정 링크'
+      '사용 부서', '사용 날짜', '수정 링크', '참조ID'
     ]);
-    sheet.getRange(1, 1, 1, 10).setFontWeight('bold').setBackground('#f3f3f3');
+    sheet.getRange(1, 1, 1, 11).setFontWeight('bold').setBackground('#f3f3f3');
     // 사용일시 열 날짜 형식 지정
     sheet.getRange('A:A').setNumberFormat('yyyy. M. d. HH:mm:ss');
   }
@@ -110,8 +128,9 @@ function getHistorySheet() {
 
 /**
  * History 시트에 이력 행을 추가합니다.
+ * @param {string} refId - 연결된 noteId (노트 삭제 시 History 연동 삭제용, 없으면 '')
  */
-function writeHistoryRow(name, category, status, location, user, purpose, department, usageDate, editUrl) {
+function writeHistoryRow(name, category, status, location, user, purpose, department, usageDate, editUrl, refId) {
   try {
     const sheet = getHistorySheet();
     sheet.appendRow([
@@ -124,7 +143,8 @@ function writeHistoryRow(name, category, status, location, user, purpose, depart
       purpose    || '',
       department || '',
       usageDate  || '',
-      editUrl    || ''
+      editUrl    || '',
+      refId      || ''  // K열: 참조ID
     ]);
   } catch(err) {
     Logger.log('writeHistoryRow 오류: ' + err.toString());
@@ -328,13 +348,17 @@ function addNoteToSheet(note) {
     syncStatusToMainSheet(note.itemId, note.status);
 
     // 상태 변경 시 History 자동 기록
+    // 프론트에서 itemMeta 전달된 경우 바로 사용 → 추가 시트 조회 없이 처리
     try {
-      const item = getItemDataFromMainSheet(note.itemId);
+      const item = (note.itemMeta && note.itemMeta.name)
+        ? note.itemMeta
+        : getItemDataFromMainSheet(note.itemId);
       if (item) {
         writeHistoryRow(
           item.name, item.category, note.status, item.location,
           item.user, note.memo || item.purpose,
-          item.department, item.usageDate, item.editUrl
+          item.department, item.usageDate, item.editUrl,
+          String(note.id) // 참조ID = noteId (삭제 연동용)
         );
       }
     } catch(e) {
@@ -360,7 +384,29 @@ function deleteNoteFromSheet(itemId, noteId) {
       photosSheet.deleteRow(j + 1);
     }
   }
+  // 연결된 History 행도 삭제 (참조ID = noteId)
+  deleteHistoryRowsByRef(String(noteId));
   return { success: true };
+}
+
+/**
+ * History 시트에서 참조ID(K열)가 일치하는 행을 모두 삭제합니다.
+ * @param {string} refId - 삭제할 noteId
+ */
+function deleteHistoryRowsByRef(refId) {
+  if (!refId) return;
+  try {
+    const sheet = getHistorySheet();
+    const data  = sheet.getDataRange().getValues();
+    const refColIdx = 10; // K열 (0-based)
+    for (let i = data.length - 1; i >= 1; i--) {
+      if (String(data[i][refColIdx]) === refId) {
+        sheet.deleteRow(i + 1);
+      }
+    }
+  } catch(e) {
+    Logger.log('deleteHistoryRowsByRef 오류: ' + e.toString());
+  }
 }
 
 // ─── 메인 시트 조작 ──────────────────────────────────────────────────────────
@@ -439,7 +485,7 @@ function updateItemInSheet(itemId, fields) {
       };
       writeHistoryRow(
         g('장비명'), g('카테고리'), g('상태'), g('위치'),
-        g('사용자'), g('사용 목적'), g('사용 부서'), g('사용 날짜'), g('수정 링크')
+        g('사용자'), g('사용 목적'), g('사용 부서'), g('사용 날짜'), g('수정 링크'), ''
       );
     } catch(e) {
       Logger.log('History 기록 오류 (updateItem): ' + e.toString());
@@ -469,7 +515,7 @@ function deleteItemFromSheet(itemId) {
       if (item) {
         writeHistoryRow(
           item.name, item.category, '삭제됨', item.location,
-          item.user, '장비 삭제 처리', item.department, item.usageDate, ''
+          item.user, '장비 삭제 처리', item.department, item.usageDate, '', ''
         );
       }
     } catch(e) {

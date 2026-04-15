@@ -125,6 +125,8 @@ function _parseGvizHistoryText(text) {
 
 /**
  * gviz 행 배열을 히스토리 객체 배열로 변환합니다.
+ * 사용일시(열 A)의 cell.v = "Date(year,month0,day,h,m,s)" 를 파싱해
+ * actionDate(Date 객체)로 저장합니다. 캘린더 날짜 매칭에 사용됩니다.
  */
 function _parseHistoryRows(rows, cols) {
     return rows.map(row => {
@@ -136,24 +138,28 @@ function _parseHistoryRows(rows, cols) {
             const str = (typeof val === 'string') ? val.trim() : String(val ?? '').trim();
             const h   = (cols[i] || '').trim().toLowerCase();
 
-            if      (h === '사용일시' || h === '타임스탬프')           obj.timestamp  = str;
-            else if (h === '장비명'   || h.includes('장비명'))          obj.name       = str;
-            else if (h === '카테고리' || h.includes('카테고리'))         obj.category   = str;
-            else if (h === '상태'     || h.includes('상태'))             obj.status     = str;
-            else if (h === '위치'     || h.includes('위치'))             obj.location   = str;
-            else if (h.includes('사용자'))                               obj.user       = str;
-            else if (h.includes('목적'))                                 obj.purpose    = str;
-            else if (h.includes('부서'))                                 obj.department = str;
-            else if (h.includes('사용 날짜') || h === '사용날짜') {
-                obj.dateStr = str;
-                const parsed   = _parseUsageDate(str);
-                obj.startDate  = parsed.start;
-                obj.endDate    = parsed.end;
+            if (h === '사용일시' || h === '타임스탬프') {
+                obj.timestamp = str; // 화면 표시용 포맷 문자열
+                // cell.v = "Date(2026,3,15,10,30,0)" (월은 0-based)
+                const rawV = cell.v;
+                if (typeof rawV === 'string' && rawV.startsWith('Date(')) {
+                    const p = rawV.slice(5, -1).split(',').map(Number);
+                    const d = new Date(p[0], p[1], p[2] || 1, p[3] || 0, p[4] || 0, p[5] || 0);
+                    if (!isNaN(d.getTime())) obj.actionDate = d;
+                }
             }
-            else if (h.includes('수정'))                                 obj.editUrl    = str;
+            else if (h === '장비명'   || h.includes('장비명'))   obj.name       = str;
+            else if (h === '카테고리' || h.includes('카테고리'))  obj.category   = str;
+            else if (h === '상태'     || h.includes('상태'))      obj.status     = str;
+            else if (h === '위치'     || h.includes('위치'))      obj.location   = str;
+            else if (h.includes('사용자'))                         obj.user       = str;
+            else if (h.includes('목적'))                           obj.purpose    = str;
+            else if (h.includes('부서'))                           obj.department = str;
+            else if (h.includes('사용 날짜') || h === '사용날짜') obj.dateStr    = str;
+            else if (h.includes('수정'))                           obj.editUrl    = str;
         });
         return obj;
-    }).filter(item => item.name && item.startDate);
+    }).filter(item => item.name && item.actionDate);
 }
 
 /**
@@ -311,11 +317,13 @@ function renderCalendar() {
             const isSunday     = d === 0;
             const isSaturday   = d === 6;
 
-            // 이 날짜에 해당하는 이벤트 수집
-            const dayEvents = filteredData.filter(item =>
-                item.startDate && item.endDate &&
-                day >= item.startDate && day <= item.endDate
-            );
+            // 이 날짜에 해당하는 이벤트 수집 (사용일시 기준 정확한 날짜 매칭)
+            const dayEvents = filteredData.filter(item => {
+                if (!item.actionDate) return false;
+                return item.actionDate.getFullYear() === day.getFullYear() &&
+                       item.actionDate.getMonth()    === day.getMonth()    &&
+                       item.actionDate.getDate()     === day.getDate();
+            });
             const hasEvents = dayEvents.length > 0;
 
             let cls = 'cal-day-num-cell';
@@ -372,14 +380,15 @@ function _renderDots(events) {
  * @param {string} dateStr "YYYY-MM-DD" 형식
  */
 function showDayDetail(dateStr) {
-    const [y, m, d]  = dateStr.split('-').map(Number);
-    const clickedDate = new Date(y, m - 1, d);
+    const [y, m, d] = dateStr.split('-').map(Number);
 
     const filtered = _getFilteredHistory();
-    const events   = filtered.filter(item =>
-        item.startDate && item.endDate &&
-        clickedDate >= item.startDate && clickedDate <= item.endDate
-    );
+    const events   = filtered.filter(item => {
+        if (!item.actionDate) return false;
+        return item.actionDate.getFullYear() === y &&
+               item.actionDate.getMonth()    === m - 1 &&
+               item.actionDate.getDate()     === d;
+    });
 
     if (events.length === 0) return;
 

@@ -65,13 +65,25 @@ async function saveNote() {
         return;
     }
 
+    const item = inventoryData.find(i => i.id === currentSelectedId);
     const note = {
         itemId: currentSelectedId,
         id:     Date.now(),
         status: status || null,
         memo:   memo   || null,
         photos: [...localPhotoDataUrls],
-        date:   new Date().toLocaleString('ko-KR')
+        date:   new Date().toLocaleString('ko-KR'),
+        // Apps Script의 추가 시트 조회(getItemDataFromMainSheet) 없이 처리하기 위해 메타 전달
+        itemMeta: item ? {
+            name:       item.name       || '',
+            category:   item.category   || '',
+            location:   item.location   || '',
+            user:       item.user       || '',
+            purpose:    item.purpose    || '',
+            department: item.department || '',
+            usageDate:  item.usageDate  || item.date || '',
+            editUrl:    item.editUrl    || ''
+        } : null
     };
 
     const saveBtn      = document.querySelector('.note-save-btn');
