@@ -23,7 +23,9 @@ async function openModal(id) {
             </div>
             <div class="detail-item">
                 <span class="dlabel">현재 상태</span>
-                <span id="currentStatusTag" class="status-tag ${getStatusClass(item.status)}">${item.status}</span>
+                <div class="dval dval-status-wrap">
+                    <span id="currentStatusTag" class="status-tag ${getStatusClass(item.status)}">${item.status}</span>
+                </div>
             </div>
             <div class="detail-item fw">
                 <span class="dlabel">보관 / 사용 장소</span>

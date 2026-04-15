@@ -102,12 +102,18 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
+    align-items: stretch;
 }
 
 .detail-item {
     display: flex;
     flex-direction: column;
     gap: 4px;
+}
+
+/* .dval이 남은 공간을 채워 좌우 칸 높이가 자동으로 맞춰짐 */
+.detail-item .dval {
+    flex: 1;
 }
 
 .detail-item.fw {
@@ -129,6 +135,60 @@
     padding: 9px 13px;
     border-radius: 7px;
     border: 1px solid #f1f5f9;
+}
+
+/* ── Status Value Wrapper (카테고리 박스 높이에 맞춤) ── */
+.dval-status-wrap {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+/* ── 노트 로딩 스켈레톤 ── */
+.notes-skeleton {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1.5px dashed #e8edf5;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.notes-skeleton-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.notes-skeleton-item {
+    background: #fafbff;
+    border: 1.5px solid #e8eaf6;
+    border-radius: 9px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* 스켈레톤 바 */
+.sk-bar {
+    height: 10px;
+    border-radius: 20px;
+    background: linear-gradient(90deg, #e8edf5 25%, #f1f5f9 50%, #e8edf5 75%);
+    background-size: 200% 100%;
+    animation: sk-shimmer 1.4s infinite;
+}
+
+.sk-bar--full  { width: 100%; }
+.sk-bar--mid   { width: 65%; }
+.sk-bar--short { width: 40%; }
+.sk-bar--sm    { width: 120px; height: 10px; }
+.sk-bar--xs    { width: 60px; height: 8px; opacity: 0.6; }
+
+@keyframes sk-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
 }
 
 /* ── Note Section ── */

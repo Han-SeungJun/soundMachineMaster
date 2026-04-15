@@ -194,6 +194,23 @@ async function renderNotes(id) {
     const area = document.getElementById('notesHistoryArea');
     if (!area) return;
 
+    // 로딩 중 스켈레톤 표시 (기록 여부와 무관하게, 네트워크 조회 중임을 알림)
+    area.innerHTML = `
+        <div class="notes-skeleton">
+            <div class="notes-skeleton-header">
+                <div class="sk-bar sk-bar--sm"></div>
+                <div class="sk-bar sk-bar--xs"></div>
+            </div>
+            <div class="notes-skeleton-item">
+                <div class="sk-bar sk-bar--full"></div>
+                <div class="sk-bar sk-bar--mid"></div>
+            </div>
+            <div class="notes-skeleton-item">
+                <div class="sk-bar sk-bar--full"></div>
+                <div class="sk-bar sk-bar--short"></div>
+            </div>
+        </div>`;
+
     // 1단계: 사진 제외 텍스트 노트 빠르게 조회
     let sheetNotes = [];
     try {
