@@ -359,18 +359,24 @@ function _formatDateKey(d) {
 }
 
 /**
- * 날짜 셀의 점(dot) HTML 생성
- * 카테고리별 고유 색 점을 최대 5개까지 표시하고, 건수를 작은 숫자로 표시합니다.
+ * 날짜 셀의 카테고리 아이콘+건수 칩 HTML 생성
+ * 카테고리별로 아이콘과 건수를 한 줄로 표시합니다.
  */
 function _renderDots(events) {
-    const uniqueCats = [...new Set(events.map(e => e.category).filter(Boolean))];
-    const dots = uniqueCats.slice(0, 4).map(cat =>
-        `<span class="cal-dot ${_getCategoryColorClass(cat)}"></span>`
-    ).join('');
-    const countBadge = events.length > 1
-        ? `<span class="cal-dot-count">${events.length}</span>`
-        : '';
-    return `<div class="cal-day-dots">${dots}${countBadge}</div>`;
+    // 카테고리별 건수 집계
+    const catCounts = {};
+    events.forEach(e => {
+        const cat = e.category || '기타';
+        catCounts[cat] = (catCounts[cat] || 0) + 1;
+    });
+
+    const chips = Object.entries(catCounts).slice(0, 4).map(([cat, count]) => {
+        const colorCls = _getCategoryColorClass(cat);
+        const icon     = getIconByCategory(cat);
+        return `<span class="cal-cat-chip ${colorCls}"><i class="fas ${icon}"></i><span class="cal-chip-count">${count}</span></span>`;
+    }).join('');
+
+    return `<div class="cal-day-dots">${chips}</div>`;
 }
 
 // ── 날짜 상세 다이얼로그 ──────────────────────────────────────────────────────
@@ -405,8 +411,14 @@ function showDayDetail(dateStr) {
     );
 
     listEl.innerHTML = sorted.map(item => {
-        const catCls = _getCategoryColorClass(item.category);
-        return `<div class="day-detail-item">
+        const catCls    = _getCategoryColorClass(item.category);
+        // inventoryData에서 장비명 매칭 → 클릭 시 장비 상세 모달 오픈
+        const gearItem  = inventoryData.find(i => i.name === item.name);
+        const clickable = !!gearItem;
+        const clickAttr = clickable
+            ? `onclick="_openGearFromHistory(${gearItem.id})" role="button" tabindex="0"`
+            : '';
+        return `<div class="day-detail-item${clickable ? ' day-detail-item--clickable' : ''}" ${clickAttr}>
             <div class="day-detail-cat-badge ${catCls}">
                 <i class="fas ${getIconByCategory(item.category)}"></i>
                 ${escapeHtml(item.category || '기타')}
@@ -424,6 +436,7 @@ function showDayDetail(dateStr) {
                 ${item.purpose ? `<div class="day-detail-purpose"><i class="fas fa-info-circle"></i> ${escapeHtml(item.purpose)}</div>` : ''}
                 ${item.status ? `<div class="day-detail-row"><span class="day-detail-label">상태</span><span class="status-tag ${getStatusClass(item.status)}" style="font-size:10px;">${escapeHtml(item.status)}</span></div>` : ''}
             </div>
+            ${clickable ? '<span class="day-detail-arrow"><i class="fas fa-chevron-right"></i></span>' : ''}
         </div>`;
     }).join('');
 
@@ -436,6 +449,17 @@ function showDayDetail(dateStr) {
 function closeDayDetailModal() {
     const modal = document.getElementById('dayDetailModal');
     if (modal) modal.classList.remove('active');
+}
+
+/**
+ * 날짜 상세 리스트에서 장비를 클릭했을 때 장비 상세 모달을 엽니다.
+ * @param {number} gearId - inventoryData의 장비 id
+ */
+function _openGearFromHistory(gearId) {
+    closeDayDetailModal();
+    // 장비 목록 섹션으로 전환 후 모달 오픈
+    showSection('inventory');
+    setTimeout(() => openModal(gearId), 120);
 }
 
 // ── 헬퍼 ──────────────────────────────────────────────────────────────────────
