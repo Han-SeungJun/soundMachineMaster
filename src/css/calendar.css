@@ -162,32 +162,33 @@
 .cal-cat-chip {
     display: inline-flex;
     align-items: center;
-    gap: 2px;
-    padding: 2px 5px;
+    gap: 3px;
+    padding: 3px 8px;
     border-radius: 20px;
-    font-size: 9px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 800;
     color: #fff;
     white-space: nowrap;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.22);
     line-height: 1.3;
+    letter-spacing: -0.2px;
 }
 
 .cal-cat-chip i {
-    font-size: 8px;
+    font-size: 10px;
     line-height: 1;
 }
 
 .cal-chip-count {
-    font-size: 9px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 800;
     line-height: 1;
 }
 
-.cal-cat-chip.cal-ev-sound   { background: rgba(99, 102, 241, 0.85); }
-.cal-cat-chip.cal-ev-video   { background: rgba(59, 130, 246, 0.85); }
-.cal-cat-chip.cal-ev-photo   { background: rgba(236, 72, 153, 0.85); }
-.cal-cat-chip.cal-ev-default { background: rgba(100, 116, 139, 0.70); }
+.cal-cat-chip.cal-ev-sound   { background: #6366f1; }
+.cal-cat-chip.cal-ev-video   { background: #3b82f6; }
+.cal-cat-chip.cal-ev-photo   { background: #ec4899; }
+.cal-cat-chip.cal-ev-default { background: #64748b; }
 
 /* ── 범례 ── */
 .cal-legend {
@@ -369,9 +370,9 @@
 
     .cal-day-num      { font-size: 11px; width: 23px; height: 23px; }
     .cal-dow          { font-size: 9px; }
-    .cal-cat-chip     { font-size: 8px; padding: 1px 3px; gap: 1px; }
-    .cal-cat-chip i   { font-size: 7px; }
-    .cal-chip-count   { font-size: 8px; }
+    .cal-cat-chip     { font-size: 10px; padding: 2px 5px; gap: 2px; }
+    .cal-cat-chip i   { font-size: 9px; }
+    .cal-chip-count   { font-size: 10px; }
 
     .day-detail-cat-badge { font-size: 10px; padding: 3px 8px; }
     .day-detail-dept      { font-size: 13px; }

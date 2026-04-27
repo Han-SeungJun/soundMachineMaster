@@ -4,12 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f6b5919d-bc3a-48f5-a1aa-55a08fe2593d" name="Changes" comment="히스토리 기능 구현 캘린더 UI 구현, 보수 용이성을 위한 전체구조 고도화">
+    <list default="true" id="f6b5919d-bc3a-48f5-a1aa-55a08fe2593d" name="Changes" comment="UI/UX 개선">
       <change afterPath="$PROJECT_DIR$/.idea/.gitignore" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/.idea/soundreport.iml" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -19,13 +20,43 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {}
+}</component>
+  <component name="GitHubPullRequestState">{
+  &quot;prStates&quot;: [
+    {
+      &quot;id&quot;: {
+        &quot;id&quot;: &quot;PR_kwDORXqsRs7SYMcD&quot;,
+        &quot;number&quot;: 20
+      },
+      &quot;lastSeen&quot;: 1776185137536
+    }
+  ]
+}</component>
   <component name="GitLabDefaultAccount">
     <option name="defaultAccountId" value="600a6062-b189-40b9-a876-7452b06f685a" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 7,
-  "fromUser": false
-}]]></component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/Han-SeungJun/soundreport.git&quot;,
+    &quot;accountId&quot;: &quot;ffcb6a9a-f2ed-4e2b-b57a-ac2498094c92&quot;
+  },
+  &quot;recentNewPullRequestHead&quot;: {
+    &quot;server&quot;: {
+      &quot;useHttp&quot;: false,
+      &quot;host&quot;: &quot;github.com&quot;,
+      &quot;port&quot;: null,
+      &quot;suffix&quot;: null
+    },
+    &quot;owner&quot;: &quot;Han-SeungJun&quot;,
+    &quot;repository&quot;: &quot;soundreport&quot;
+  }
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7,
+  &quot;fromUser&quot;: false
+}</component>
   <component name="ProjectId" id="3Bs8AyyyOqKb7BM388vibu8T71f" />
   <component name="ProjectViewState">
     <option name="flattenModules" value="true" />
@@ -38,10 +69,12 @@
     "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "dev",
+    "git-widget-placeholder": "#23 on dev",
+    "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/Administrator/workspace/beloved_workspace/soundreport",
     "node.js.detected.package.eslint": "true",
@@ -61,6 +94,10 @@
       <option name="presentableId" value="Default" />
       <updated>1775266278295</updated>
       <workItem from="1775266279627" duration="1289000" />
+      <workItem from="1776184720157" duration="782000" />
+      <workItem from="1776227749963" duration="80000" />
+      <workItem from="1776230050251" duration="650000" />
+      <workItem from="1776237164126" duration="70000" />
     </task>
     <task id="LOCAL-00001" summary="히스토리 기능 구현 캘린더 UI 구현, 보수 용이성을 위한 전체구조 고도화">
       <option name="closed" value="true" />
@@ -70,7 +107,39 @@
       <option name="project" value="LOCAL" />
       <updated>1775267533126</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="히스토리 기능 개발 및 병목방지 최적화">
+      <option name="closed" value="true" />
+      <created>1776185046214</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1776185046214</updated>
+    </task>
+    <task id="LOCAL-00003" summary="UI/UX 개선">
+      <option name="closed" value="true" />
+      <created>1776227792067</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1776227792067</updated>
+    </task>
+    <task id="LOCAL-00004" summary="버그 수정">
+      <option name="closed" value="true" />
+      <created>1776231029186</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1776231029186</updated>
+    </task>
+    <task id="LOCAL-00005" summary="UI/UX 개선">
+      <option name="closed" value="true" />
+      <created>1776237211551</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1776237211551</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -89,6 +158,9 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="히스토리 기능 구현 캘린더 UI 구현, 보수 용이성을 위한 전체구조 고도화" />
-    <option name="LAST_COMMIT_MESSAGE" value="히스토리 기능 구현 캘린더 UI 구현, 보수 용이성을 위한 전체구조 고도화" />
+    <MESSAGE value="히스토리 기능 개발 및 병목방지 최적화" />
+    <MESSAGE value="버그 수정" />
+    <MESSAGE value="UI/UX 개선" />
+    <option name="LAST_COMMIT_MESSAGE" value="UI/UX 개선" />
   </component>
 </project>

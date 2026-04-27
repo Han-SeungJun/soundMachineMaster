@@ -179,6 +179,39 @@
     border-color: var(--accent-red);
 }
 
+.return-btn {
+    background: #a855f7;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: var(--t);
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.return-btn:hover {
+    background: #9333ea;
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.35);
+    transform: translateY(-1px);
+}
+
+.return-btn:active {
+    transform: translateY(0);
+}
+
+.return-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
 .text-btn {
     background: none;
     border: none;

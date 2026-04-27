@@ -82,6 +82,18 @@ async function openModal(id) {
         <div id="notesHistoryArea"></div>
     `;
 
+    const returnBtn = document.getElementById('modalReturnBtn');
+    if (returnBtn) {
+        const isRental = (item.status || '').trim() === '대여중';
+        returnBtn.disabled = false;
+        returnBtn.innerHTML = '<i class="fas fa-rotate-left"></i> 반납하기';
+        if (isRental) {
+            returnBtn.removeAttribute('style');
+        } else {
+            returnBtn.style.display = 'none';
+        }
+    }
+
     const editBtn = document.getElementById('modalEditBtn');
     if (item.editUrl && item.editUrl !== '-' && item.editUrl !== '') {
         editBtn.href          = item.editUrl;
@@ -99,6 +111,78 @@ function closeModal() {
     currentSelectedId = null;
     const dangerBtn = document.querySelector('#gearModal .danger-btn');
     if (dangerBtn) dangerBtn.style.display = '';
+}
+
+/**
+ * 대여중 장비를 즉시 가용 상태로 반납 처리
+ */
+async function returnItem() {
+    if (!currentSelectedId) return;
+    const item = inventoryData.find(i => i.id === currentSelectedId);
+    if (!item) return;
+
+    const returnBtn = document.getElementById('modalReturnBtn');
+    const originalHtml = returnBtn.innerHTML;
+    returnBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 처리 중...';
+    returnBtn.disabled = true;
+
+    const note = {
+        itemId: currentSelectedId,
+        id:     Date.now(),
+        status: '가용',
+        memo:   '반납 처리',
+        photos: [],
+        date:   new Date().toLocaleString('ko-KR'),
+        itemMeta: {
+            name:       item.name       || '',
+            category:   item.category   || '',
+            location:   item.location   || '',
+            user:       item.user       || '',
+            purpose:    item.purpose    || '',
+            department: item.department || '',
+            usageDate:  item.usageDate  || item.date || '',
+            editUrl:    item.editUrl    || ''
+        }
+    };
+
+    try {
+        const resp = await fetch(GOOGLE_WEBAPP_URL, {
+            method:  'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body:    JSON.stringify({ action: 'addNote', note })
+        });
+        if (!resp.ok) throw new Error('서버 오류: ' + resp.status);
+        const result = await resp.json();
+        if (result?.error) throw new Error(result.error);
+    } catch (e) {
+        console.error('Return failed:', e);
+        showNotification('반납 처리 실패: ' + e.message, 'error');
+        returnBtn.innerHTML = originalHtml;
+        returnBtn.disabled = false;
+        return;
+    }
+
+    item.status = '가용';
+    const tag = document.getElementById('currentStatusTag');
+    if (tag) { tag.className = `status-tag ${getStatusClass('가용')}`; tag.innerText = '가용'; }
+
+    returnBtn.style.display = 'none';
+
+    if (!pendingNotes[currentSelectedId]) pendingNotes[currentSelectedId] = [];
+    pendingNotes[currentSelectedId].push({
+        itemId: note.itemId,
+        id:     note.id,
+        status: '가용',
+        memo:   note.memo,
+        photos: [],
+        date:   note.date
+    });
+
+    renderInventory();
+    updateStats();
+    initDashboard();
+    showNotification('반납 처리가 완료되었습니다.', 'success');
+    await renderNotes(currentSelectedId);
 }
 
 // ── Google Form 모달 ──────────────────────────────────────────────────────────
