@@ -218,7 +218,8 @@
 }
 
 .local-select,
-.local-textarea {
+.local-textarea,
+.local-input {
     width: 100%;
     padding: 9px 12px;
     border-radius: 8px;
@@ -232,7 +233,8 @@
 }
 
 .local-select:focus,
-.local-textarea:focus {
+.local-textarea:focus,
+.local-input:focus {
     border-color: var(--primary);
     background: white;
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);

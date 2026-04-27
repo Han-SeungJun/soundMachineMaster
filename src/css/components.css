@@ -179,6 +179,44 @@
     border-color: var(--accent-red);
 }
 
+.rent-btn,
+.rent-confirm-btn {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: var(--t);
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.rent-btn:hover,
+.rent-confirm-btn:hover {
+    background: #059669;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+    transform: translateY(-1px);
+}
+
+.rent-btn:active,
+.rent-confirm-btn:active {
+    transform: translateY(0);
+}
+
+.rent-btn:disabled,
+.rent-confirm-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
 .return-btn {
     background: #a855f7;
     color: white;

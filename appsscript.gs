@@ -457,7 +457,8 @@ function updateItemInSheet(itemId, fields) {
       location:   '위치',
       user:       '사용자 (실 사용자 혹은 담당교역자)',
       purpose:    '사용 목적',
-      department: '사용 부서'
+      department: '사용 부서',
+      usageDate:  '사용 날짜'
     };
 
     Object.keys(fields).forEach(function(key) {
