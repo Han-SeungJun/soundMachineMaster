@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
             closeHistoryModal();
             closeSheetEditModal();
             closeDayDetailModal();
+            closeRentModal();
         }
     });
 

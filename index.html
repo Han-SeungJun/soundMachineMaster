@@ -381,6 +381,9 @@
                 <button class="return-btn" id="modalReturnBtn" onclick="returnItem()" style="display:none;">
                     <i class="fas fa-rotate-left"></i> 반납하기
                 </button>
+                <button class="rent-btn" id="modalRentBtn" onclick="openRentModal()" style="display:none;">
+                    <i class="fas fa-right-from-bracket"></i> 대여하기
+                </button>
                 <a class="primary-btn" id="modalEditBtn" target="_blank" style="text-decoration:none; display:none;">
                     <i class="fas fa-external-link-alt"></i>Google Form 수정
                 </a>
@@ -433,6 +436,45 @@
             </div>
             <div class="modal-footer">
                 <button class="secondary-btn" onclick="closeDayDetailModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ RENT DIALOG MODAL ═══ -->
+    <div id="rentModal" class="modal-overlay">
+        <div class="modal-content" style="max-width:440px;">
+            <div class="modal-header">
+                <div>
+                    <h2>장비 대여 등록</h2>
+                    <div class="mh-sub" id="rentModalSubtitle"></div>
+                </div>
+                <button class="close-btn" onclick="closeRentModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-grid" style="gap:14px;">
+                    <div class="detail-item fw">
+                        <span class="dlabel">사용자 <span style="color:#ef4444;font-size:10.5px;font-weight:700;">필수</span></span>
+                        <input type="text" id="rentUser" class="local-input" placeholder="실 사용자 혹은 담당교역자">
+                    </div>
+                    <div class="detail-item fw">
+                        <span class="dlabel">사용 목적</span>
+                        <input type="text" id="rentPurpose" class="local-input" placeholder="예: 주일 예배, 특별 집회 등">
+                    </div>
+                    <div class="detail-item fw">
+                        <span class="dlabel">사용 부서</span>
+                        <select id="rentDepartment" class="local-select"></select>
+                    </div>
+                    <div class="detail-item fw">
+                        <span class="dlabel">사용 날짜</span>
+                        <input type="date" id="rentDate" class="local-input">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content:flex-end;">
+                <button class="secondary-btn" onclick="closeRentModal()">취소</button>
+                <button class="rent-confirm-btn" id="rentConfirmBtn" onclick="confirmRent()">
+                    <i class="fas fa-circle-check"></i> 대여 등록
+                </button>
             </div>
         </div>
     </div>

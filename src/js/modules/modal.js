@@ -82,16 +82,20 @@ async function openModal(id) {
         <div id="notesHistoryArea"></div>
     `;
 
+    const statusTrimmed = (item.status || '').trim();
     const returnBtn = document.getElementById('modalReturnBtn');
     if (returnBtn) {
-        const isRental = (item.status || '').trim() === '대여중';
         returnBtn.disabled = false;
         returnBtn.innerHTML = '<i class="fas fa-rotate-left"></i> 반납하기';
-        if (isRental) {
-            returnBtn.removeAttribute('style');
-        } else {
-            returnBtn.style.display = 'none';
-        }
+        if (statusTrimmed === '대여중') { returnBtn.removeAttribute('style'); }
+        else { returnBtn.style.display = 'none'; }
+    }
+    const rentBtn = document.getElementById('modalRentBtn');
+    if (rentBtn) {
+        rentBtn.disabled = false;
+        rentBtn.innerHTML = '<i class="fas fa-right-from-bracket"></i> 대여하기';
+        if (statusTrimmed === '가용') { rentBtn.removeAttribute('style'); }
+        else { rentBtn.style.display = 'none'; }
     }
 
     const editBtn = document.getElementById('modalEditBtn');
@@ -167,6 +171,12 @@ async function returnItem() {
     if (tag) { tag.className = `status-tag ${getStatusClass('가용')}`; tag.innerText = '가용'; }
 
     returnBtn.style.display = 'none';
+    const rentBtnEl = document.getElementById('modalRentBtn');
+    if (rentBtnEl) {
+        rentBtnEl.innerHTML = '<i class="fas fa-right-from-bracket"></i> 대여하기';
+        rentBtnEl.disabled = false;
+        rentBtnEl.removeAttribute('style');
+    }
 
     if (!pendingNotes[currentSelectedId]) pendingNotes[currentSelectedId] = [];
     pendingNotes[currentSelectedId].push({
@@ -183,6 +193,128 @@ async function returnItem() {
     initDashboard();
     showNotification('반납 처리가 완료되었습니다.', 'success');
     await renderNotes(currentSelectedId);
+}
+
+// ── 대여 다이얼로그 ───────────────────────────────────────────────────────────
+
+/**
+ * 가용 장비 대여 다이얼로그 열기
+ */
+function openRentModal() {
+    if (!currentSelectedId) return;
+    const item = inventoryData.find(i => i.id === currentSelectedId);
+    if (!item) return;
+
+    document.getElementById('rentModalSubtitle').innerText = item.name;
+
+    const sel = document.getElementById('rentDepartment');
+    sel.innerHTML = '<option value="">-- 부서 선택 --</option>';
+    DEPARTMENTS.forEach(dep => {
+        const opt = document.createElement('option');
+        opt.value = dep;
+        opt.textContent = dep;
+        if (item.department && item.department !== '-' && dep === item.department) opt.selected = true;
+        sel.appendChild(opt);
+    });
+
+    const today = new Date();
+    document.getElementById('rentDate').value =
+        `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    document.getElementById('rentUser').value    = (item.user    && item.user    !== '-') ? item.user    : '';
+    document.getElementById('rentPurpose').value = (item.purpose && item.purpose !== '-') ? item.purpose : '';
+
+    const confirmBtn = document.getElementById('rentConfirmBtn');
+    confirmBtn.innerHTML = '<i class="fas fa-circle-check"></i> 대여 등록';
+    confirmBtn.disabled  = false;
+
+    document.getElementById('rentModal').classList.add('active');
+}
+
+function closeRentModal() {
+    document.getElementById('rentModal').classList.remove('active');
+}
+
+/**
+ * 대여 등록 확인 → updateItem API 호출 → History 자동 기록
+ */
+async function confirmRent() {
+    if (!currentSelectedId) return;
+
+    const userVal    = document.getElementById('rentUser').value.trim();
+    const purposeVal = document.getElementById('rentPurpose').value.trim();
+    const deptVal    = document.getElementById('rentDepartment').value;
+    const dateVal    = document.getElementById('rentDate').value;
+
+    if (!userVal) {
+        showNotification('사용자를 입력해주세요.', 'error');
+        document.getElementById('rentUser').focus();
+        return;
+    }
+
+    let usageDate = '';
+    if (dateVal) {
+        const [y, m, d] = dateVal.split('-');
+        usageDate = `${y}.${m}.${d}`;
+    }
+
+    const item       = inventoryData.find(i => i.id === currentSelectedId);
+    if (!item) return;
+
+    const confirmBtn    = document.getElementById('rentConfirmBtn');
+    const originalHtml  = confirmBtn.innerHTML;
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 처리 중...';
+    confirmBtn.disabled  = true;
+
+    try {
+        const resp = await fetch(GOOGLE_WEBAPP_URL, {
+            method:  'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body:    JSON.stringify({
+                action: 'updateItem',
+                itemId: currentSelectedId,
+                fields: {
+                    status:     '대여중',
+                    user:       userVal,
+                    purpose:    purposeVal || item.purpose || '',
+                    department: deptVal    || item.department || '',
+                    usageDate:  usageDate
+                }
+            })
+        });
+        if (!resp.ok) throw new Error('서버 오류: ' + resp.status);
+        const result = await resp.json();
+        if (result?.error) throw new Error(result.error);
+    } catch (e) {
+        console.error('Rent failed:', e);
+        showNotification('대여 처리 실패: ' + e.message, 'error');
+        confirmBtn.innerHTML = originalHtml;
+        confirmBtn.disabled  = false;
+        return;
+    }
+
+    item.status     = '대여중';
+    item.user       = userVal;
+    item.purpose    = purposeVal || item.purpose;
+    item.department = deptVal    || item.department;
+    item.date       = usageDate  || item.date;
+
+    const tag = document.getElementById('currentStatusTag');
+    if (tag) { tag.className = `status-tag ${getStatusClass('대여중')}`; tag.innerText = '대여중'; }
+
+    const rentBtnEl   = document.getElementById('modalRentBtn');
+    const returnBtnEl = document.getElementById('modalReturnBtn');
+    if (rentBtnEl)   rentBtnEl.style.display = 'none';
+    if (returnBtnEl) {
+        returnBtnEl.innerHTML = '<i class="fas fa-rotate-left"></i> 반납하기';
+        returnBtnEl.disabled  = false;
+        returnBtnEl.removeAttribute('style');
+    }
+
+    closeRentModal();
+    renderInventory();
+    updateStats();
+    initDashboard();
+    showNotification('대여 등록이 완료되었습니다.', 'success');
 }
 
 // ── Google Form 모달 ──────────────────────────────────────────────────────────
