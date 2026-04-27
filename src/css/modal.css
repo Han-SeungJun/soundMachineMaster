@@ -92,9 +92,16 @@
     border-top: 1px solid #f1f5f9;
     display: flex;
     justify-content: flex-end;
+    align-items: center;
     gap: 8px;
     flex-shrink: 0;
+    flex-wrap: wrap;
     background: #fafbff;
+}
+
+.modal-footer .danger-btn {
+    margin-right: auto;
+    flex-shrink: 0;
 }
 
 /* ── Detail Grid ── */
