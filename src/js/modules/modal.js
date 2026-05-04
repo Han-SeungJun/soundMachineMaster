@@ -130,30 +130,11 @@ async function returnItem() {
     returnBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 처리 중...';
     returnBtn.disabled = true;
 
-    const note = {
-        itemId: currentSelectedId,
-        id:     Date.now(),
-        status: '가용',
-        memo:   '반납 처리',
-        photos: [],
-        date:   new Date().toLocaleString('ko-KR'),
-        itemMeta: {
-            name:       item.name       || '',
-            category:   item.category   || '',
-            location:   item.location   || '',
-            user:       item.user       || '',
-            purpose:    item.purpose    || '',
-            department: item.department || '',
-            usageDate:  item.usageDate  || item.date || '',
-            editUrl:    item.editUrl    || ''
-        }
-    };
-
     try {
         const resp = await fetch(GOOGLE_WEBAPP_URL, {
             method:  'POST',
             headers: { 'Content-Type': 'text/plain' },
-            body:    JSON.stringify({ action: 'addNote', note })
+            body:    JSON.stringify({ action: 'updateItem', itemId: currentSelectedId, fields: { status: '가용' } })
         });
         if (!resp.ok) throw new Error('서버 오류: ' + resp.status);
         const result = await resp.json();
@@ -177,16 +158,6 @@ async function returnItem() {
         rentBtnEl.disabled = false;
         rentBtnEl.removeAttribute('style');
     }
-
-    if (!pendingNotes[currentSelectedId]) pendingNotes[currentSelectedId] = [];
-    pendingNotes[currentSelectedId].push({
-        itemId: note.itemId,
-        id:     note.id,
-        status: '가용',
-        memo:   note.memo,
-        photos: [],
-        date:   note.date
-    });
 
     renderInventory();
     updateStats();
