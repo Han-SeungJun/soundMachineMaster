@@ -1,102 +1,15 @@
-/* ═══ 반응형 (모바일) & 인쇄 ═══ */
+/* ═══ 반응형 (모바일 앱 UI) & 인쇄 ═══ */
 
-@media (max-width: 768px) {
-    .app-container {
-        flex-direction: column;
-        padding-bottom: 64px;
-    }
-
-    .sidebar {
-        width: 100%;
-        height: auto;
-        position: sticky;
-        top: 0;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px 16px;
-        overflow-y: visible;
-        overflow-x: hidden;
-    }
-
-    .logo-wrap {
-        padding: 0;
-    }
-
-    .sidebar-bottom {
-        display: none;
-    }
-
-    .nav-label {
-        display: none;
-    }
-
-    .nav-menu {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        flex-direction: row;
-        justify-content: space-around;
-        padding: 8px 0;
-        z-index: 200;
-        height: 62px;
-    }
-
-    .nav-item {
-        flex-direction: column;
-        padding: 5px 10px;
-        gap: 3px;
-        font-size: 10px;
-    }
-
-    .nav-item::before {
-        display: none;
-    }
-
-    .nav-item i {
-        font-size: 17px;
-        width: auto;
-    }
-
+/* ─────────────────────────────────────────────────────────────────
+   태블릿 (768px ~ 1024px)
+───────────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
     .main-content {
-        margin-left: 0;
-        padding: 14px;
-    }
-
-    .top-bar {
-        flex-direction: column;
-        gap: 10px;
-        align-items: stretch;
-        margin-bottom: 18px;
-    }
-
-    .search-wrap {
-        max-width: 100%;
-    }
-
-    .header-actions {
-        justify-content: flex-end;
-    }
-
-    .search-shortcut-hint {
-        display: none;
+        padding: 20px 22px;
     }
 
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-    }
-
-    .stat-card {
-        padding: 14px;
-        flex-direction: column;
-        text-align: center;
-        gap: 8px;
-    }
-
-    .stat-data h3 {
-        font-size: 24px;
     }
 
     .dashboard-grid {
@@ -107,48 +20,6 @@
         grid-column: 1;
     }
 
-    .inv-header h1 {
-        font-size: 20px;
-    }
-
-    .inventory-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .inv-toolbar {
-        gap: 6px;
-    }
-
-    .filter-select {
-        font-size: 12px;
-    }
-
-    .toolbar-right {
-        width: 100%;
-        justify-content: flex-end;
-    }
-
-    .modal-content {
-        max-width: 100%;
-        max-height: 95vh;
-        border-radius: var(--radius);
-    }
-
-    .detail-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .modal-footer {
-        flex-wrap: wrap;
-        gap: 6px;
-    }
-
-    .modal-footer button,
-    .modal-footer a {
-        flex: 1;
-        justify-content: center;
-    }
-
     .stats-page-grid {
         grid-template-columns: 1fr;
     }
@@ -156,13 +27,702 @@
     .stats-page-grid .card.wide {
         grid-column: 1;
     }
+}
 
-    td, th {
+/* ─────────────────────────────────────────────────────────────────
+   모바일 (≤ 768px) — 앱 화면 전용 UI
+───────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+
+    /* ── 앱 컨테이너 ── */
+    .app-container {
+        flex-direction: column;
+        padding-bottom: 72px;
+    }
+
+    /* ══ 사이드바 → 상단 앱바 ══ */
+    .sidebar {
+        width: 100%;
+        height: 56px;
+        position: sticky;
+        top: 0;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        overflow: visible;
+        z-index: 300;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    }
+
+    .logo-wrap {
+        padding: 0;
+        gap: 8px;
+    }
+
+    .logo-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 13px;
+        border-radius: 8px;
+    }
+
+    .logo-text {
+        font-size: 13px;
+        line-height: 1.3;
+    }
+
+    .logo-text small {
+        display: none;
+    }
+
+    .sidebar-bottom {
+        display: none;
+    }
+
+    /* ══ 하단 탭바 ══ */
+    .nav-menu {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-around;
+        align-items: stretch;
+        padding: 0;
+        z-index: 300;
+        height: 64px;
+        background: linear-gradient(175deg, #1e2d40 0%, #0f172a 100%);
+        border-top: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 -4px 16px rgba(0,0,0,0.22);
+    }
+
+    .nav-label {
+        display: none;
+    }
+
+    .nav-item {
+        flex: 1;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 6px 4px 8px;
+        gap: 3px;
+        font-size: 10px;
+        font-weight: 600;
+        color: #475569;
+        border-radius: 0;
+        margin-bottom: 0;
+        letter-spacing: 0;
+    }
+
+    .nav-item span {
+        display: block;
+        font-size: 9.5px;
+        font-weight: 600;
+        letter-spacing: -0.2px;
+    }
+
+    .nav-item::before {
+        display: none;
+    }
+
+    .nav-item i {
+        font-size: 18px;
+        width: auto;
+        margin: 0;
+    }
+
+    .nav-item.active {
+        color: #a5b4fc;
+        background: rgba(99,102,241,0.12);
+    }
+
+    .nav-item.active i {
+        color: #818cf8;
+    }
+
+    /* ══ 메인 콘텐츠 ══ */
+    .main-content {
+        margin-left: 0;
+        padding: 12px 14px 16px;
+    }
+
+    /* ══ 상단 검색/액션바 ══ */
+    .top-bar {
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 14px;
+        align-items: center;
+    }
+
+    .search-wrap {
+        max-width: 100%;
+        flex: 1;
+        min-width: 0;
+        order: 1;
+    }
+
+    .search-input {
+        font-size: 15px; /* iOS 자동확대 방지 */
+        padding: 11px 44px 11px 40px;
+        border-radius: 12px;
+    }
+
+    .search-shortcut-hint {
+        display: none;
+    }
+
+    .header-actions {
+        order: 2;
+        justify-content: flex-end;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    .icon-btn {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        font-size: 15px;
+    }
+
+    /* 새 장비 등록 버튼 → 아이콘만 표시 */
+    .link-gear-register-btn {
+        width: 42px;
+        height: 42px;
+        padding: 0;
+        justify-content: center;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .link-gear-register-btn span {
+        display: none;
+    }
+
+    .link-gear-register-btn i {
+        font-size: 16px;
+        margin: 0;
+    }
+
+    /* ══ 통계 카드 ══ */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+
+    .stat-card {
+        padding: 12px 13px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        border-radius: 14px;
+    }
+
+    .stat-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 15px;
+        border-radius: 9px;
+    }
+
+    .stat-data h3 {
+        font-size: 24px;
+        letter-spacing: -1px;
+    }
+
+    .stat-data .label {
+        font-size: 10.5px;
+    }
+
+    /* ══ 섹션 헤더 ══ */
+    .section-header,
+    .inv-header {
+        margin-bottom: 12px;
+    }
+
+    .section-header h1,
+    .inv-header h1 {
+        font-size: 20px;
+        letter-spacing: -0.5px;
+    }
+
+    .section-header .subtitle,
+    .inv-header .subtitle {
+        font-size: 12px;
+    }
+
+    /* ══ 툴바 (가로 스크롤) ══ */
+    .inv-toolbar {
+        gap: 6px;
+        margin-bottom: 10px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+    }
+
+    .inv-toolbar::-webkit-scrollbar { display: none; }
+
+    .filter-select {
+        font-size: 13px;
+        padding: 8px 10px;
+        border-radius: 9px;
+        flex-shrink: 0;
+        min-width: fit-content;
+        min-height: 36px;
+    }
+
+    .status-pills {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        flex-shrink: 0;
+        gap: 5px;
+    }
+
+    .status-pills::-webkit-scrollbar { display: none; }
+
+    .spill {
+        flex-shrink: 0;
+        padding: 7px 13px;
+        font-size: 12px;
+        min-height: 36px;
+    }
+
+    .toolbar-right {
+        flex-shrink: 0;
+        margin-left: 0;
+        gap: 5px;
+    }
+
+    .result-count {
+        font-size: 11.5px;
         white-space: nowrap;
+    }
+
+    /* ══ 그리드 뷰 (2열) ══ */
+    .inventory-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .gear-card {
+        border-radius: 14px;
+    }
+
+    .gear-icon-area {
+        height: 80px;
+        font-size: 28px;
+    }
+
+    .gear-body {
+        padding: 10px 11px 12px;
+    }
+
+    .gear-name {
+        font-size: 13px;
+        margin-bottom: 7px;
+    }
+
+    .gear-cat {
+        font-size: 9px;
+        margin-bottom: 2px;
+    }
+
+    .gear-meta-row {
+        font-size: 11px;
+        gap: 4px;
+    }
+
+    .gear-note-dot {
+        width: 18px;
+        height: 18px;
+        font-size: 8px;
+        top: 6px;
+        right: 6px;
+    }
+
+    /* ══ 리스트 뷰 (모바일 — 위치·날짜 컬럼 숨김) ══ */
+    .list-table {
+        font-size: 13px;
+    }
+
+    .list-table th {
+        font-size: 10px;
+        padding: 8px 9px;
+    }
+
+    .list-table td {
+        padding: 10px 9px;
+    }
+
+    /* 위치(4번째), 날짜(6번째) 컬럼 모바일에서 숨김 */
+    .list-table th:nth-child(4),
+    .list-table td:nth-child(4),
+    .list-table th:nth-child(6),
+    .list-table td:nth-child(6) {
+        display: none;
+    }
+
+    .name-cell {
+        gap: 7px;
+    }
+
+    .mini-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 11px;
+        border-radius: 6px;
+        flex-shrink: 0;
+    }
+
+    /* ══ 대시보드 ══ */
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .dashboard-grid .card.wide {
+        grid-column: 1;
+    }
+
+    .stats-page-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .stats-page-grid .card.wide {
+        grid-column: 1;
+    }
+
+    /* ══ 이슈 배너 ══ */
+    .issue-banner {
+        padding: 10px 13px;
+        font-size: 12.5px;
+        border-radius: 10px;
+        margin-bottom: 12px;
+    }
+
+    /* ══ 모달 — 바텀시트 스타일 ══ */
+    .modal-overlay {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .modal-content {
+        max-width: 100%;
+        width: 100%;
+        max-height: 92vh;
+        border-radius: 20px 20px 0 0;
+        transform: translateY(100%);
+    }
+
+    .modal-overlay.active .modal-content {
+        transform: translateY(0);
+    }
+
+    /* 바텀시트 드래그 핸들 */
+    .modal-header {
+        position: relative;
+        padding: 22px 18px 14px;
+        border-radius: 20px 20px 0 0;
+    }
+
+    .modal-header::before {
+        content: '';
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 36px;
+        height: 4px;
+        background: #e2e8f0;
+        border-radius: 2px;
+    }
+
+    .modal-header h2 {
+        font-size: 17px;
+    }
+
+    .modal-body {
+        padding: 16px 18px;
+    }
+
+    .modal-footer {
+        padding: 12px 18px 16px;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .modal-footer button,
+    .modal-footer a {
+        flex: 1;
+        justify-content: center;
+        min-height: 46px;
+        font-size: 14px;
+        border-radius: 10px;
+    }
+
+    .modal-footer .danger-btn {
+        margin-right: 0;
+        order: 10;
+        flex-basis: 100%;
+        justify-content: center;
+    }
+
+    /* ── 장비 상세 그리드 ── */
+    .detail-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .dval {
+        font-size: 13px;
+        padding: 8px 11px;
+        border-radius: 8px;
+    }
+
+    .dlabel {
+        font-size: 9.5px;
+    }
+
+    /* ── 노트 / 메모 섹션 ── */
+    .note-section {
+        margin-top: 14px;
+        padding-top: 14px;
+    }
+
+    .local-select,
+    .local-textarea,
+    .local-input {
+        font-size: 15px; /* iOS 자동확대 방지 (16px 미만이면 zoom 발생) */
+        padding: 11px 13px;
+        border-radius: 10px;
+    }
+
+    .local-textarea {
+        min-height: 88px;
+    }
+
+    .note-save-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 12px;
+        font-size: 14px;
+        border-radius: 10px;
+        margin-top: 12px;
+        min-height: 46px;
+    }
+
+    .photo-label {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 16px;
+        font-size: 14px;
+        border-radius: 10px;
+        min-height: 46px;
+    }
+
+    .photo-preview-area img {
+        width: 64px;
+        height: 64px;
+    }
+
+    .note-item {
+        padding: 12px 14px;
+        border-radius: 10px;
+    }
+
+    /* ── 공통 버튼 터치 최적화 ── */
+    .rent-btn,
+    .rent-confirm-btn,
+    .return-btn,
+    .secondary-btn,
+    .danger-btn {
+        min-height: 44px;
+        font-size: 14px;
+        border-radius: 10px;
+    }
+
+    .close-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 9px;
+        font-size: 14px;
+    }
+
+    /* ══ 히스토리 캘린더 ══ */
+    .cal-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .cal-filters {
+        gap: 6px;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .cal-filters::-webkit-scrollbar { display: none; }
+
+    .cal-nav {
+        margin-left: 0;
+        justify-content: center;
+    }
+
+    .cal-nav-btn {
+        height: 38px;
+        padding: 0 14px;
+        font-size: 13px;
+        border-radius: 10px;
+    }
+
+    .cal-month-title {
+        font-size: 15px;
+        min-width: 100px;
+    }
+
+    .cal-day-num-cell {
+        padding: 6px 2px 8px;
+        min-height: 60px;
+        gap: 4px;
+    }
+
+    .cal-day-num {
+        font-size: 12px;
+        width: 24px;
+        height: 24px;
+    }
+
+    .cal-dow {
+        font-size: 9.5px;
+        padding: 8px 0;
+    }
+
+    .cal-cat-chip {
+        font-size: 9px;
+        padding: 2px 5px;
+        gap: 2px;
+        border-radius: 10px;
+    }
+
+    .cal-cat-chip i { font-size: 8px; }
+    .cal-chip-count { font-size: 9px; }
+
+    /* 날짜 상세 */
+    .day-detail-cat-badge {
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+
+    .day-detail-dept { font-size: 13.5px; }
+    .day-detail-row  { font-size: 12px; }
+
+    /* ══ 카드 ══ */
+    .card {
+        border-radius: 14px;
+        padding: 15px;
+    }
+
+    .card-header {
+        margin-bottom: 12px;
+    }
+
+    /* ══ 빈 상태 ══ */
+    .empty-state {
+        padding: 40px 16px;
+    }
+
+    .empty-state i {
+        font-size: 36px;
+        margin-bottom: 10px;
+    }
+
+    .empty-state h3 {
+        font-size: 14px;
+    }
+
+    /* ══ 히스토리 모달 리스트 ══ */
+    .history-item {
+        padding: 10px 0;
+        gap: 10px;
+    }
+
+    .hist-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+        border-radius: 8px;
+    }
+
+    .hist-name {
+        font-size: 13px;
+    }
+
+    .hist-meta {
+        font-size: 11px;
     }
 }
 
-/* ── Print ── */
+/* ─────────────────────────────────────────────────────────────────
+   소형 모바일 (≤ 375px) — 추가 최적화
+───────────────────────────────────────────────────────────────── */
+@media (max-width: 375px) {
+    .main-content {
+        padding: 10px 11px 14px;
+    }
+
+    .inventory-grid {
+        gap: 8px;
+    }
+
+    .gear-icon-area {
+        height: 68px;
+        font-size: 24px;
+    }
+
+    .gear-name {
+        font-size: 12px;
+    }
+
+    .gear-meta-row {
+        font-size: 10px;
+    }
+
+    .stats-grid {
+        gap: 6px;
+    }
+
+    .stat-data h3 {
+        font-size: 22px;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-body {
+        padding: 13px 14px;
+    }
+
+    .modal-footer {
+        padding: 10px 14px 14px;
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   인쇄
+───────────────────────────────────────────────────────────────── */
 @media print {
     .sidebar,
     .top-bar,

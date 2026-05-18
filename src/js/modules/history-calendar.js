@@ -144,7 +144,9 @@ function _parseHistoryRows(rows, cols) {
                 const rawV = cell.v;
                 if (typeof rawV === 'string' && rawV.startsWith('Date(')) {
                     const p = rawV.slice(5, -1).split(',').map(Number);
-                    const d = new Date(p[0], p[1], p[2] || 1, p[3] || 0, p[4] || 0, p[5] || 0);
+                    // gviz Date() 값은 UTC 기준으로 반환됨.
+                    // Date.UTC()로 파싱해야 getDate() 등 로컬(KST) 메서드로 올바른 날짜를 얻음.
+                    const d = new Date(Date.UTC(p[0], p[1], p[2] || 1, p[3] || 0, p[4] || 0, p[5] || 0));
                     if (!isNaN(d.getTime())) obj.actionDate = d;
                 }
             }
