@@ -243,7 +243,10 @@ async function renderNotes(id) {
     );
     const notes = [...sheetNotes, ...pending];
 
+    const prevCount = getNoteCount(id);
     localStorage.setItem(`noteCount_${id}`, notes.length);
+    // 카운트가 변경됐을 때만 인벤토리 뱃지 갱신 (모달 열릴 때 최신 상태 반영)
+    if (notes.length !== prevCount) renderInventory();
     if (notes.length === 0) { area.innerHTML = ''; return; }
 
     const items = notes.slice().sort((a, b) => b.id - a.id).map(note => {

@@ -81,7 +81,6 @@ function _renderGridView(container, data) {
 
 function _renderListView(container, data) {
     container.className = '';
-    const noteCol = data.some(i => getNoteCount(i.id) > 0);
 
     container.innerHTML = `
         <div class="card" style="padding:0; overflow:hidden;">
@@ -94,7 +93,7 @@ function _renderListView(container, data) {
                         <th>위치</th>
                         <th>부서</th>
                         <th>날짜</th>
-                        ${noteCol ? '<th>기록</th>' : ''}
+                        <th>기록</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -113,7 +112,7 @@ function _renderListView(container, data) {
                             <td style="font-size:12.5px;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;">${item.location}</td>
                             <td style="font-size:12.5px;color:var(--text-muted);">${item.department}</td>
                             <td style="font-size:12px;color:var(--text-muted);">${item.date}</td>
-                            ${noteCol ? `<td>${nc > 0 ? `<span class="list-note-badge"><i class="fas fa-note-sticky"></i>${nc}</span>` : ''}</td>` : ''}
+                            <td>${nc > 0 ? `<span class="list-note-badge"><i class="fas fa-note-sticky"></i>${nc}</span>` : ''}</td>
                         </tr>`;
                     }).join('')}
                 </tbody>
