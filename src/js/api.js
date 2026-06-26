@@ -112,3 +112,48 @@ async function fetchDataFromGS() {
         showNotification('데이터를 불러올 수 없습니다.', 'error');
     }
 }
+
+// ═══ 공용 gviz 읽기 헬퍼 (세트/사용자/묶음 시트 공용) ═══
+
+/**
+ * gviz/tq 엔드포인트에서 JSON을 읽어 {cols, rows}로 파싱합니다.
+ * (fetchDataFromGS와 동일한 파싱 규칙 — DRY를 위해 신규 로더가 공용으로 사용)
+ * @param {string} url
+ * @returns {Promise<{cols:string[], rows:Array}>}
+ */
+async function fetchGviz(url) {
+    if (!url) throw new Error('시트 URL이 비어 있습니다.');
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('네트워크 오류: ' + res.status);
+
+    const text  = await res.text();
+    const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S\w]+)\);?/);
+    if (!match) throw new Error('데이터 포맷 오류');
+
+    const json = JSON.parse(match[1]);
+    const cols = (json.table.cols || []).map(c => (c && c.label) ? c.label.trim() : '');
+    const rows = json.table.rows || [];
+    return { cols, rows };
+}
+
+/**
+ * fetchGviz 결과를 헤더명 기준 객체 배열로 변환합니다.
+ * 각 행은 { [헤더명]: 셀값 } 형태(문자열은 trim). 빈 헤더 컬럼은 무시.
+ * @param {{cols:string[], rows:Array}} parsed
+ * @returns {Array<Object>}
+ */
+function gvizRowsToObjects(parsed) {
+    const cols = parsed.cols || [];
+    const rows = parsed.rows || [];
+    return rows.map(row => {
+        const obj = {};
+        (row.c || []).forEach((cell, i) => {
+            const key = cols[i];
+            if (!key) return;
+            let val = cell ? cell.v : null;
+            if (typeof val === 'string') val = val.trim();
+            obj[key] = val;
+        });
+        return obj;
+    });
+}
