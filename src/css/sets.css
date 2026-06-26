@@ -1,0 +1,377 @@
+/* ═══ 세트 대여 UI ═══ */
+
+/* ── 인벤토리 헤더의 세트 대여 진입 버튼 ── */
+.set-rent-open-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: var(--t);
+    white-space: nowrap;
+}
+
+.set-rent-open-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow);
+}
+
+.set-rent-open-btn:active { transform: translateY(0); }
+
+/* ── 모달 크기 ── */
+.set-rent-modal-content {
+    max-width: 600px;
+    width: 100%;
+}
+
+.set-rent-modal-content .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* ── 섹션 라벨 ── */
+.set-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin: 16px 2px 8px;
+}
+.set-section-label:first-child { margin-top: 0; }
+
+/* ── 최근 / 즐겨찾기 칩 ── */
+.quick-sets-area { margin-bottom: 4px; }
+
+.quick-empty {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    padding: 10px 12px;
+    background: var(--bg-main);
+    border-radius: var(--radius-sm);
+}
+
+.quick-row-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin: 10px 2px 6px;
+}
+.quick-row-label i { font-size: 10px; color: var(--accent-orange); }
+
+.quick-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.quick-chip {
+    display: inline-flex;
+    align-items: stretch;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--bg-card);
+    transition: var(--t);
+}
+.quick-chip:hover { border-color: var(--primary-light); box-shadow: var(--shadow-sm); }
+
+.quick-chip-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    background: transparent;
+    border: none;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-main);
+    cursor: pointer;
+}
+.quick-chip-main i { font-size: 11px; color: var(--primary); }
+.quick-chip-main em {
+    font-style: normal;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.quick-chip-fav {
+    padding: 0 11px;
+    background: transparent;
+    border: none;
+    border-left: 1px solid #eef2f6;
+    color: #cbd5e1;
+    cursor: pointer;
+    font-size: 12px;
+    transition: var(--t);
+}
+.quick-chip-fav:hover { color: var(--accent-orange); }
+.quick-chip-fav.on { color: var(--accent-orange); }
+
+/* ── 세트 검색 ── */
+.set-search-input { width: 100%; }
+
+/* ── 세트 목록 ── */
+.set-list-area {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 240px;
+    overflow-y: auto;
+    padding: 2px;
+}
+
+.set-list-empty {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    padding: 14px 12px;
+    text-align: center;
+    background: var(--bg-main);
+    border-radius: var(--radius-sm);
+}
+
+.set-group-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin: 2px 2px 6px;
+}
+
+.set-card-btn {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    background: var(--bg-card);
+    border: 1.5px solid #e2e8f0;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    text-align: left;
+    transition: var(--t);
+}
+.set-card-btn:hover { border-color: var(--primary-light); background: #fafbff; }
+.set-card-btn.on {
+    border-color: var(--primary);
+    background: #f5f6ff;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.set-card-icon {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--primary);
+    font-size: 16px;
+}
+
+.set-card-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.set-card-name { font-size: 14px; font-weight: 700; color: var(--text-main); }
+.set-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+}
+
+.set-avail {
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 10.5px;
+}
+.set-avail.ok    { background: rgba(16, 185, 129, 0.12); color: #059669; }
+.set-avail.short { background: rgba(245, 158, 11, 0.14); color: #b45309; }
+
+/* ── 선택 세트 구성 장비 ── */
+.set-comp-list {
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--bg-main);
+    border-radius: var(--radius-sm);
+}
+
+.set-comp-empty { font-size: 12.5px; color: var(--text-muted); text-align: center; }
+
+.set-comp-head {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 8px;
+}
+
+.set-comp-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 10px;
+    background: var(--bg-card);
+    border-radius: 8px;
+    margin-bottom: 5px;
+    border-left: 3px solid var(--accent-green);
+}
+.set-comp-row.short { border-left-color: var(--accent-orange); }
+
+.set-comp-name { font-size: 13px; font-weight: 600; color: var(--text-main); }
+.set-comp-name em {
+    font-style: normal;
+    font-size: 10.5px;
+    color: var(--text-muted);
+    margin-left: 5px;
+}
+
+.set-comp-badge {
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+.set-comp-badge.ok    { background: rgba(16, 185, 129, 0.12); color: #059669; }
+.set-comp-badge.short { background: rgba(245, 158, 11, 0.14); color: #b45309; }
+
+.set-comp-warn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 8px;
+    padding: 9px 11px;
+    background: rgba(245, 158, 11, 0.1);
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #b45309;
+}
+
+/* ── 세트 대여 등록 버튼 ── */
+.set-rent-confirm-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 18px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--t);
+}
+.set-rent-confirm-btn:hover:not(:disabled) { background: var(--primary-dark); }
+.set-rent-confirm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ═══ 세트 관리(CRUD) UI — 시트 관리 섹션 ═══ */
+
+.set-mgmt-card { margin-top: 18px; }
+
+.set-mgmt-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.set-mgmt-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--t);
+}
+.set-mgmt-add-btn:hover { background: var(--primary-dark); }
+
+.set-mgmt-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid #eef2f6;
+}
+.set-mgmt-row:last-child { border-bottom: none; }
+
+.set-mgmt-info { flex: 1; min-width: 0; }
+.set-mgmt-name { font-size: 14px; font-weight: 700; color: var(--text-main); }
+.set-mgmt-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+
+.set-mgmt-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+.set-mgmt-edit-btn,
+.set-mgmt-del-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 11px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: var(--bg-card);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--t);
+}
+.set-mgmt-edit-btn:hover { border-color: var(--primary); color: var(--primary); }
+.set-mgmt-del-btn:hover { border-color: var(--accent-red); color: var(--accent-red); }
+
+/* 세트 편집 모달의 구성 행 */
+.set-form-item-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.set-form-item-row input { flex: 1; min-width: 0; }
+.set-form-item-row input.qty { flex: 0 0 64px; }
+.set-form-item-del {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--accent-red);
+    cursor: pointer;
+}
+.set-form-add-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+}
+.set-form-add-item:hover { border-color: var(--primary); color: var(--primary); }

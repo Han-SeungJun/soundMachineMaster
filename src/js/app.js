@@ -36,6 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
             closeSheetEditModal();
             closeDayDetailModal();
             closeRentModal();
+            if (typeof closeSetRentModal === 'function') closeSetRentModal();
+            if (typeof closeSetFormModal === 'function') closeSetFormModal();
         }
     });
 
@@ -50,4 +52,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (GOOGLE_SHEET_API && GOOGLE_SHEET_API.trim() !== '') {
         fetchDataFromGS();
     }
+
+    // ── 세트/사용자/묶음 데이터 로드 (gviz, 인벤토리와 병렬) ──
+    if (typeof loadUsers === 'function')       loadUsers();
+    if (typeof loadSets === 'function')        loadSets();
+    if (typeof loadRentBundles === 'function') loadRentBundles();
 });

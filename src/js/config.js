@@ -13,6 +13,20 @@ const HISTORY_SHEET_URL = _SID
     ? `https://docs.google.com/spreadsheets/d/${_SID}/gviz/tq?tqx=out:json&sheet=History`
     : '';
 
+// 세트 대여 관련 시트 읽기용 gviz/tq URL (탭은 수동 생성됨)
+const SETS_SHEET_URL = _SID
+    ? `https://docs.google.com/spreadsheets/d/${_SID}/gviz/tq?tqx=out:json&sheet=Sets`
+    : '';
+const SETITEMS_SHEET_URL = _SID
+    ? `https://docs.google.com/spreadsheets/d/${_SID}/gviz/tq?tqx=out:json&sheet=SetItems`
+    : '';
+const RENTBUNDLES_SHEET_URL = _SID
+    ? `https://docs.google.com/spreadsheets/d/${_SID}/gviz/tq?tqx=out:json&sheet=RentBundles`
+    : '';
+const USERS_SHEET_URL = _SID
+    ? `https://docs.google.com/spreadsheets/d/${_SID}/gviz/tq?tqx=out:json&sheet=Users`
+    : '';
+
 const LOCATIONS = [
     "B1층 리바이벌 성전", "1층 유치부실", "1층 다윗의 장막",
     "1층 새가족1실", "1층 새가족2실", "2층 웨일즈성전", "2층 아주사성전",
@@ -24,6 +38,10 @@ const DEPARTMENTS = [
     "청년부 영상팀", "청년부 음향팀", "사사모 영상팀", "사사모 음향팀",
     "본팀 영상팀", "본팀 음향팀"
 ];
+
+// 사용자 드롭다운 폴백 목록 (Users 시트 로딩 실패 시 사용 — 시트 값이 우선).
+// 형식: { userName, department } — department는 선택(부서 자동완성용).
+const USERS = [];
 
 // 관리자 비밀번호 해시 (SHA-256)
 const SHEET_ADMIN_HASH = 'daa35e4f1a0e43def76e13a948cbda05be2569901fa0c6d5d6342fb2bdc85028';

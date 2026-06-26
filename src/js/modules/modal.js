@@ -166,6 +166,39 @@ async function returnItem() {
     await renderNotes(currentSelectedId);
 }
 
+// ── 사용자 드롭다운 (datalist 공용) ───────────────────────────────────────────
+
+/**
+ * #userList datalist를 usersData(없으면 USERS 폴백)로 채운다.
+ * 개별 대여(#rentUser)와 세트 대여(#setRentUser)가 공용으로 사용한다.
+ */
+function populateUserDatalist() {
+    const dl = document.getElementById('userList');
+    if (!dl) return;
+    const source = (typeof usersData !== 'undefined' && usersData.length)
+        ? usersData
+        : (typeof USERS !== 'undefined' ? USERS : []).map(u => (typeof u === 'string' ? { userName: u } : u));
+    dl.innerHTML = source
+        .filter(u => u && u.userName)
+        .map(u => `<option value="${escapeHtml(u.userName)}"></option>`)
+        .join('');
+}
+
+/**
+ * 사용자명 입력/선택 시 해당 사용자의 기본 부서를 부서 select에 자동 채운다.
+ * @param {string} deptSelectId - 대상 부서 select id ('rentDepartment' | 'setRentDepartment')
+ * @param {string} userName
+ */
+function onUserPicked(deptSelectId, userName) {
+    if (typeof usersData === 'undefined' || !usersData.length) return;
+    const u = usersData.find(x => x.userName === (userName || '').trim());
+    if (!u || !u.department) return;
+    const sel = document.getElementById(deptSelectId);
+    if (!sel) return;
+    const has = Array.from(sel.options).some(o => o.value === u.department);
+    if (has) sel.value = u.department;
+}
+
 // ── 대여 다이얼로그 ───────────────────────────────────────────────────────────
 
 /**
@@ -177,6 +210,8 @@ function openRentModal() {
     if (!item) return;
 
     document.getElementById('rentModalSubtitle').innerText = item.name;
+
+    populateUserDatalist();
 
     const sel = document.getElementById('rentDepartment');
     sel.innerHTML = '<option value="">-- 부서 선택 --</option>';
@@ -268,6 +303,8 @@ async function confirmRent() {
     item.purpose    = purposeVal || item.purpose;
     item.department = deptVal    || item.department;
     item.date       = usageDate  || item.date;
+
+    localStorage.setItem('lastRentUser', userVal);
 
     const tag = document.getElementById('currentStatusTag');
     if (tag) { tag.className = `status-tag ${getStatusClass('대여중')}`; tag.innerText = '대여중'; }

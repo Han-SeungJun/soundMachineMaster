@@ -260,6 +260,21 @@ function doPost(e) {
     } else if (action === 'deleteItem') {
       return ContentService.createTextOutput(JSON.stringify(deleteItemFromSheet(params.itemId)))
         .setMimeType(ContentService.MimeType.JSON);
+    } else if (action === 'rentSet') {
+      return ContentService.createTextOutput(JSON.stringify(rentSetItems(params)))
+        .setMimeType(ContentService.MimeType.JSON);
+    } else if (action === 'saveSet') {
+      return ContentService.createTextOutput(JSON.stringify(saveSetToSheet(params)))
+        .setMimeType(ContentService.MimeType.JSON);
+    } else if (action === 'updateSet') {
+      return ContentService.createTextOutput(JSON.stringify(updateSetInSheet(params)))
+        .setMimeType(ContentService.MimeType.JSON);
+    } else if (action === 'deleteSet') {
+      return ContentService.createTextOutput(JSON.stringify(deleteSetFromSheet(params)))
+        .setMimeType(ContentService.MimeType.JSON);
+    } else if (action === 'toggleFavorite') {
+      return ContentService.createTextOutput(JSON.stringify(toggleFavoriteInSheet(params)))
+        .setMimeType(ContentService.MimeType.JSON);
     }
 
     return ContentService.createTextOutput(JSON.stringify({ error: 'Unknown action' }))
@@ -559,6 +574,262 @@ function cascadeDeleteNotes(itemId) {
   }
 
   return deletedNoteIds.length;
+}
+
+// ─── 세트/사용자/대여묶음 시트 헬퍼 (자동생성 안 함 — 탭은 수동 생성됨) ──────────
+
+/**
+ * 이름으로 기존 시트를 가져옵니다. 없으면 명확한 에러(자동생성하지 않음).
+ * @param {string} name
+ * @returns {Sheet}
+ */
+function getRequiredSheet_(name) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(name);
+  if (!sheet) throw new Error('시트 없음: "' + name + '" 탭을 먼저 생성하세요.');
+  return sheet;
+}
+
+function getSetsSheet()        { return getRequiredSheet_('Sets'); }
+function getSetItemsSheet()    { return getRequiredSheet_('SetItems'); }
+function getRentBundlesSheet() { return getRequiredSheet_('RentBundles'); }
+function getUsersSheet()       { return getRequiredSheet_('Users'); }
+
+/**
+ * 시트 헤더 행을 읽어 {헤더명: 0-based 인덱스} 맵과 메타를 반환합니다.
+ */
+function headerColMap_(sheet) {
+  const lastCol = sheet.getLastColumn();
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const map = {};
+  headers.forEach(function(h, i) { if (h) map[String(h).trim()] = i; });
+  return { headers: headers, map: map, lastCol: lastCol };
+}
+
+/** 헤더 맵에서 라벨(정확/포함)로 0-based 컬럼 인덱스를 찾습니다. 없으면 -1. */
+function colIndex_(map, label) {
+  if (map[label] !== undefined) return map[label];
+  for (var h in map) { if (h.indexOf(label) !== -1) return map[h]; }
+  return -1;
+}
+
+/** {헤더라벨: 값} 객체를 헤더 위치에 맞춰 1행 append 합니다(컬럼 순서 비의존). */
+function appendByHeaders_(sheet, valuesByLabel) {
+  const info = headerColMap_(sheet);
+  const row  = [];
+  for (var i = 0; i < info.lastCol; i++) row.push('');
+  Object.keys(valuesByLabel).forEach(function(label) {
+    const idx = colIndex_(info.map, label);
+    if (idx !== -1) row[idx] = valuesByLabel[label];
+  });
+  sheet.appendRow(row);
+}
+
+/** 특정 라벨 컬럼 값이 일치하는 모든 행을 삭제합니다. 삭제 건수 반환. */
+function deleteRowsWhere_(sheet, label, value) {
+  const info = headerColMap_(sheet);
+  const idx  = colIndex_(info.map, label);
+  if (idx === -1) return 0;
+  const data = sheet.getDataRange().getValues();
+  var count = 0;
+  for (var i = data.length - 1; i >= 1; i--) {
+    if (String(data[i][idx]) === String(value)) { sheet.deleteRow(i + 1); count++; }
+  }
+  return count;
+}
+
+// ─── 세트 일괄 대여 (rentSet) ────────────────────────────────────────────────
+
+/**
+ * 여러 장비를 단일 호출에서 일괄 '대여중' 처리하고 건별 History 1행씩 기록합니다.
+ * 중복 기록 방지: updateItemInSheet를 호출하지 않고 행을 직접 갱신 후 writeHistoryRow 1회.
+ * @param {{items:Array, common:Object, bundle:Object}} params
+ * @returns {{success:boolean, succeeded:Array, failed:Array}}
+ */
+function rentSetItems(params) {
+  const items  = params.items  || [];
+  const common = params.common || {};
+  const bundle = params.bundle || {};
+
+  const ss        = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const mainSheet = ss.getSheets()[0];
+  const lastCol   = mainSheet.getLastColumn();
+  const headers   = mainSheet.getRange(1, 1, 1, lastCol).getValues()[0];
+
+  const colMap = {};
+  headers.forEach(function(h, i) { if (h) colMap[String(h).trim()] = i + 1; }); // 1-based
+  const findCol = function(label) {
+    if (colMap[label]) return colMap[label];
+    for (var h in colMap) { if (h.indexOf(label) !== -1) return colMap[h]; }
+    return -1;
+  };
+
+  const statusCol  = findCol('상태');
+  const userCol    = findCol('사용자');
+  const purposeCol = findCol('사용 목적');
+  const deptCol    = findCol('사용 부서');
+  const dateCol    = findCol('사용 날짜');
+
+  const succeeded = [];
+  const failed    = [];
+
+  items.forEach(function(it) {
+    try {
+      const row = findSheetRowByItemId(mainSheet, it.itemId);
+      if (row === -1) { failed.push(it.itemId); return; }
+
+      if (statusCol  > 0) mainSheet.getRange(row, statusCol ).setValue('대여중');
+      if (userCol    > 0 && common.user       != null) mainSheet.getRange(row, userCol   ).setValue(common.user);
+      if (purposeCol > 0 && common.purpose    != null) mainSheet.getRange(row, purposeCol).setValue(common.purpose);
+      if (deptCol    > 0 && common.department != null) mainSheet.getRange(row, deptCol   ).setValue(common.department);
+      if (dateCol    > 0 && common.usageDate  != null) mainSheet.getRange(row, dateCol   ).setValue(common.usageDate);
+
+      // 갱신된 행 기준 History 1회 기록
+      const updatedRow = mainSheet.getRange(row, 1, 1, lastCol).getValues()[0];
+      const ci = {};
+      headers.forEach(function(h, i) { if (h) ci[String(h).trim()] = i; });
+      const g = function(label) {
+        for (var h in ci) { if (h === label || h.indexOf(label) !== -1) return String(updatedRow[ci[h]] || '').trim(); }
+        return '';
+      };
+      writeHistoryRow(
+        g('장비명'), g('카테고리'), g('상태'), g('위치'),
+        g('사용자'), g('사용 목적'), g('사용 부서'), g('사용 날짜'), g('수정 링크'), ''
+      );
+      succeeded.push(it.itemId);
+    } catch (e) {
+      Logger.log('rentSet 개별 오류 itemId=' + it.itemId + ': ' + e.toString());
+      failed.push(it.itemId);
+    }
+  });
+
+  // 성공분이 있으면 RentBundles에 1행 기록 (실패해도 대여 자체는 성공 처리)
+  if (succeeded.length > 0) {
+    try { recordRentBundle_(common, bundle); }
+    catch (e) { Logger.log('RentBundles 기록 오류: ' + e.toString()); }
+  }
+
+  return { success: failed.length === 0, succeeded: succeeded, failed: failed };
+}
+
+/** RentBundles 시트에 대여 묶음 1행을 append 합니다(v1: 항상 append). */
+function recordRentBundle_(common, bundle) {
+  const sheet = getRentBundlesSheet();
+  const now   = new Date();
+  appendByHeaders_(sheet, {
+    'BundleID':   'B' + now.getTime(),
+    'UserName':   common.user       || '',
+    'SetID':      bundle.setId      || '',
+    'SetName':    bundle.setName    || '',
+    'Team':       bundle.team       || '',
+    'ItemNames':  bundle.itemNames  || '',
+    'Purpose':    common.purpose    || '',
+    'Department': common.department || '',
+    'UsageDate':  common.usageDate  || '',
+    'IsFavorite': false,
+    'UseCount':   1,
+    'LastUsedAt': now,
+    'CreatedAt':  now
+  });
+}
+
+// ─── 세트 마스터/구성 CRUD (saveSet / updateSet / deleteSet) ──────────────────
+
+/**
+ * Sets 마스터 1행 + SetItems 구성 N행을 추가합니다.
+ * @param {{set:Object, items:Array}} params
+ */
+function saveSetToSheet(params) {
+  const set   = params.set   || {};
+  const items = params.items || [];
+  const now   = new Date();
+  const setId = set.setId || ('SET' + now.getTime());
+
+  appendByHeaders_(getSetsSheet(), {
+    'SetID': setId, 'SetName': set.setName || '', 'Team': set.team || '',
+    'Description': set.description || '', 'Icon': set.icon || '', 'Color': set.color || '',
+    'IsActive': (set.isActive === false ? false : true),
+    'SortOrder': (set.sortOrder != null ? set.sortOrder : ''),
+    'CreatedBy': set.createdBy || '',
+    'CreatedAt': (set.createdAt || now), 'UpdatedAt': now
+  });
+
+  const itemsSheet = getSetItemsSheet();
+  items.forEach(function(it, idx) {
+    appendByHeaders_(itemsSheet, {
+      'SetID': setId, 'ItemName': it.itemName || '', 'Category': it.category || '',
+      'Quantity': (it.quantity != null ? it.quantity : 1),
+      'SortOrder': (it.sortOrder != null ? it.sortOrder : (idx + 1)),
+      'Note': it.note || ''
+    });
+  });
+
+  return { success: true, setId: setId };
+}
+
+/** 기존 setId의 마스터·구성을 삭제 후 재작성합니다(CreatedAt 보존). */
+function updateSetInSheet(params) {
+  const setId = params.setId;
+  if (!setId) return { success: false, error: 'setId 누락' };
+
+  // 기존 CreatedAt 보존
+  try {
+    const info = headerColMap_(getSetsSheet());
+    const idCol = colIndex_(info.map, 'SetID');
+    const caCol = colIndex_(info.map, 'CreatedAt');
+    if (idCol !== -1 && caCol !== -1) {
+      const data = getSetsSheet().getDataRange().getValues();
+      for (var i = 1; i < data.length; i++) {
+        if (String(data[i][idCol]) === String(setId)) {
+          params.set = params.set || {};
+          if (data[i][caCol]) params.set.createdAt = data[i][caCol];
+          break;
+        }
+      }
+    }
+  } catch (e) { Logger.log('updateSet CreatedAt 보존 오류: ' + e.toString()); }
+
+  deleteSetRows_(setId);
+  params.set = params.set || {};
+  params.set.setId = setId;
+  return saveSetToSheet(params);
+}
+
+function deleteSetFromSheet(params) {
+  const setId = params.setId;
+  if (!setId) return { success: false, error: 'setId 누락' };
+  const n = deleteSetRows_(setId);
+  return { success: true, deleted: n };
+}
+
+function deleteSetRows_(setId) {
+  var count = 0;
+  count += deleteRowsWhere_(getSetsSheet(),     'SetID', setId);
+  count += deleteRowsWhere_(getSetItemsSheet(), 'SetID', setId);
+  return count;
+}
+
+// ─── 즐겨찾기 토글 (toggleFavorite) ──────────────────────────────────────────
+
+function toggleFavoriteInSheet(params) {
+  const bundleId = params.bundleId;
+  if (!bundleId) return { success: false, error: 'bundleId 누락' };
+
+  const sheet  = getRentBundlesSheet();
+  const info   = headerColMap_(sheet);
+  const idCol  = colIndex_(info.map, 'BundleID');
+  const favCol = colIndex_(info.map, 'IsFavorite');
+  if (idCol === -1 || favCol === -1) return { success: false, error: 'BundleID/IsFavorite 컬럼 없음' };
+
+  const fav  = (params.isFavorite === true || params.isFavorite === 'true');
+  const data = sheet.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][idCol]) === String(bundleId)) {
+      sheet.getRange(i + 1, favCol + 1).setValue(fav);
+      return { success: true };
+    }
+  }
+  return { success: false, error: '해당 묶음 없음' };
 }
 
 // ─── 권한 승인 (최초 1회 실행) ───────────────────────────────────────────────

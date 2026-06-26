@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="src/css/sheets.css">
     <link rel="stylesheet" href="src/css/calendar.css">
     <link rel="stylesheet" href="src/css/toast.css">
+    <link rel="stylesheet" href="src/css/sets.css">
     <link rel="stylesheet" href="src/css/responsive.css">
 </head>
 
@@ -186,6 +187,9 @@
                         <h1>장비 인벤토리</h1>
                         <p class="subtitle">모든 장비의 상세 정보 및 이력을 관리합니다.</p>
                     </div>
+                    <button class="set-rent-open-btn" onclick="openSetRentModal()">
+                        <i class="fas fa-boxes-packing"></i> 세트 대여
+                    </button>
                 </div>
 
                 <div class="inv-toolbar">
@@ -340,6 +344,21 @@
                         <tbody id="sheetTableBody"></tbody>
                     </table>
                 </div>
+
+                <div class="card set-mgmt-card">
+                    <div class="set-mgmt-header">
+                        <div>
+                            <h3 style="font-size:16px;font-weight:700;color:var(--text-main);">
+                                <i class="fas fa-boxes-packing" style="color:var(--primary);margin-right:7px;"></i>세트 관리
+                            </h3>
+                            <p class="subtitle" style="font-size:12.5px;margin-top:2px;">자주 함께 대여하는 장비 묶음을 정의합니다. Google Sheet에서 직접 편집해도 됩니다.</p>
+                        </div>
+                        <button class="set-mgmt-add-btn" id="setMgmtAddBtn" onclick="openSetFormModal()" style="display:none;">
+                            <i class="fas fa-plus"></i> 새 세트
+                        </button>
+                    </div>
+                    <div id="setMgmtList"></div>
+                </div>
             </section>
         </main>
     </div>
@@ -363,6 +382,54 @@
             </div>
         </div>
     </div>
+
+    <!-- ═══ SET FORM MODAL (세트 추가/수정) ═══ -->
+    <div id="setFormModal" class="sheet-edit-modal">
+        <div class="sheet-edit-modal-box">
+            <div class="sheet-modal-header">
+                <h3 id="setFormTitle" style="font-size:16px;font-weight:700;color:var(--text-main);">세트 추가</h3>
+                <button class="close-btn" onclick="closeSetFormModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="sheet-modal-body">
+                <div class="edit-field">
+                    <label>세트명 <span style="color:#ef4444;">*</span></label>
+                    <input type="text" id="sf_setName" placeholder="예: 영상팀 기본 세트">
+                </div>
+                <div class="edit-field">
+                    <label>팀</label>
+                    <input type="text" id="sf_team" placeholder="예: 청년부 영상팀 (비우면 공용)">
+                </div>
+                <div class="edit-field">
+                    <label>설명</label>
+                    <input type="text" id="sf_description" placeholder="선택">
+                </div>
+                <div class="edit-field">
+                    <label>아이콘 (FontAwesome 클래스)</label>
+                    <input type="text" id="sf_icon" placeholder="예: fa-video">
+                </div>
+                <div class="edit-field">
+                    <label>강조색 (hex)</label>
+                    <input type="text" id="sf_color" placeholder="예: #6366f1">
+                </div>
+                <div class="edit-field">
+                    <label>구성 장비</label>
+                    <div id="sf_items"></div>
+                    <button type="button" class="set-form-add-item" onclick="addSetFormItemRow()">
+                        <i class="fas fa-plus"></i> 장비 추가
+                    </button>
+                </div>
+            </div>
+            <div class="sheet-modal-footer">
+                <button class="sheet-modal-cancel-btn" onclick="closeSetFormModal()">취소</button>
+                <button class="sheet-modal-save-btn" id="setFormSaveBtn" onclick="saveSetForm()">
+                    <i class="fas fa-save"></i> 저장
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 세트 구성 장비명 자동완성 datalist -->
+    <datalist id="invNameList"></datalist>
 
     <!-- ═══ GEAR DETAIL MODAL ═══ -->
     <div id="gearModal" class="modal-overlay">
@@ -454,7 +521,8 @@
                 <div class="detail-grid" style="gap:14px;">
                     <div class="detail-item fw">
                         <span class="dlabel">사용자 <span style="color:#ef4444;font-size:10.5px;font-weight:700;">필수</span></span>
-                        <input type="text" id="rentUser" class="local-input" placeholder="실 사용자 혹은 담당교역자">
+                        <input type="text" id="rentUser" class="local-input" list="userList"
+                            placeholder="실 사용자 혹은 담당교역자" oninput="onUserPicked('rentDepartment', this.value)">
                     </div>
                     <div class="detail-item fw">
                         <span class="dlabel">사용 목적</span>
@@ -478,6 +546,60 @@
             </div>
         </div>
     </div>
+
+    <!-- ═══ SET RENT MODAL ═══ -->
+    <div id="setRentModal" class="modal-overlay">
+        <div class="modal-content set-rent-modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2><i class="fas fa-boxes-packing" style="color:var(--primary);margin-right:8px;"></i>세트 대여</h2>
+                    <div class="mh-sub" style="margin-top:2px;">세트를 선택하면 가용 장비를 한 번에 대여합니다.</div>
+                </div>
+                <button class="close-btn" onclick="closeSetRentModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="set-section-label">빠른 대여</div>
+                <div id="quickSetsArea" class="quick-sets-area"></div>
+
+                <div class="set-section-label">세트 선택</div>
+                <input type="text" id="setSearchInput" class="local-input set-search-input"
+                       placeholder="세트명 · 팀으로 검색..." oninput="filterSetList()">
+                <div id="setListArea" class="set-list-area" style="margin-top:8px;"></div>
+
+                <div id="setCompList" class="set-comp-list"></div>
+
+                <div class="set-section-label">대여 정보</div>
+                <div class="detail-grid" style="gap:14px;">
+                    <div class="detail-item fw">
+                        <span class="dlabel">사용자 <span style="color:#ef4444;font-size:10.5px;font-weight:700;">필수</span></span>
+                        <input type="text" id="setRentUser" class="local-input" list="userList"
+                               placeholder="실 사용자 혹은 담당교역자" oninput="onUserPicked('setRentDepartment', this.value)">
+                    </div>
+                    <div class="detail-item fw">
+                        <span class="dlabel">사용 목적</span>
+                        <input type="text" id="setRentPurpose" class="local-input" placeholder="예: 주일 예배, 특별 집회 등">
+                    </div>
+                    <div class="detail-item fw">
+                        <span class="dlabel">사용 부서</span>
+                        <select id="setRentDepartment" class="local-select"></select>
+                    </div>
+                    <div class="detail-item fw">
+                        <span class="dlabel">사용 날짜</span>
+                        <input type="date" id="setRentDate" class="local-input">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content:flex-end;">
+                <button class="secondary-btn" onclick="closeSetRentModal()">취소</button>
+                <button class="set-rent-confirm-btn" id="setRentConfirmBtn" onclick="confirmSetRent()" disabled>
+                    <i class="fas fa-circle-check"></i> 세트 대여 등록
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 사용자 자동완성 datalist (개별 대여 / 세트 대여 공용) -->
+    <datalist id="userList"></datalist>
 
     <!-- ═══ IMAGE MODAL ═══ -->
     <div id="imageModal" class="modal-overlay" onclick="closeImageModal()">
@@ -506,6 +628,7 @@
     <script src="src/js/modules/dashboard.js"></script>
     <script src="src/js/modules/notes.js"></script>
     <script src="src/js/modules/modal.js"></script>
+    <script src="src/js/modules/sets.js"></script>
     <script src="src/js/modules/stats.js"></script>
     <script src="src/js/modules/sheet.js"></script>
     <script src="src/js/modules/history-calendar.js"></script>
