@@ -351,9 +351,13 @@
         right: 6px;
     }
 
-    /* ══ 리스트 뷰 (모바일 — 위치·날짜 컬럼 숨김) ══ */
+    /* ══ 리스트 뷰 (모바일 — 가로 스크롤 제거) ══
+       카테고리를 장비명 셀 맨 앞 칩으로 끌어올리고, 부가 컬럼은 숨겨
+       장비명(카테고리 칩) · 상태 · 기록 3열만 남긴다. */
     .list-table {
         font-size: 13px;
+        table-layout: fixed;
+        width: 100%;
     }
 
     .list-table th {
@@ -365,13 +369,50 @@
         padding: 10px 9px;
     }
 
-    /* 위치(4번째), 날짜(6번째) 컬럼 모바일에서 숨김 */
+    /* 카테고리(2) · 위치(4) · 부서(5) · 날짜(6) 컬럼은 모바일에서 숨김 */
+    .list-table th:nth-child(2),
+    .list-table td:nth-child(2),
     .list-table th:nth-child(4),
     .list-table td:nth-child(4),
+    .list-table th:nth-child(5),
+    .list-table td:nth-child(5),
     .list-table th:nth-child(6),
     .list-table td:nth-child(6) {
         display: none;
     }
+
+    .list-table th:nth-child(3),
+    .list-table td:nth-child(3) { width: 74px; }
+
+    .list-table th:nth-child(7),
+    .list-table td:nth-child(7) { width: 44px; }
+
+    /* 카테고리 칩을 장비명 위에 노출 (스와이프 없이 바로 확인) */
+    .row-cat-chip {
+        display: inline-block;
+        align-self: flex-start;
+        padding: 1px 6px;
+        border-radius: 5px;
+        background: rgba(99, 102, 241, .1);
+        color: var(--primary);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+    }
+
+    .name-cell-text strong {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* ══ 사용자 선택기 (모바일) ══ */
+    .user-picker-btn    { min-height: 46px; font-size: 15px; }
+    .user-picker-opt    { min-height: 48px; font-size: 15px; }
+    /* iOS 자동 확대 방지: 16px 이상 유지 */
+    .user-picker-search { font-size: 16px; padding: 12px; }
+    .user-picker-list   { max-height: 46vh; }
 
     .name-cell {
         gap: 7px;

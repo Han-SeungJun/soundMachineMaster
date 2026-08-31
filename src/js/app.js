@@ -28,8 +28,12 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('gearSearch').focus();
         }
 
-        // Escape → 열린 모달 닫기
+        // Escape → 열린 사용자 선택기 우선 닫기, 없으면 모달 닫기
         if (e.key === 'Escape') {
+            if (document.querySelector('.user-picker.open')) {
+                closeAllUserPickers();
+                return;
+            }
             closeModal();
             closeFormModal();
             closeHistoryModal();
@@ -39,6 +43,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (typeof closeSetRentModal === 'function') closeSetRentModal();
             if (typeof closeSetFormModal === 'function') closeSetFormModal();
         }
+    });
+
+    // ── 사용자 선택기: 바깥 클릭 시 닫기 ──────────────────
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.user-picker')) closeAllUserPickers();
     });
 
     // ── 외부 링크 (Google Form) 초기화 ────────────────────

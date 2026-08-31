@@ -90,7 +90,7 @@ async function loadUsers() {
         usersData = (typeof USERS !== 'undefined' ? USERS : []).map(u =>
             typeof u === 'string' ? { userName: u, department: '' } : u);
     }
-    if (typeof populateUserDatalist === 'function') populateUserDatalist();
+    if (typeof refreshUserPickers === 'function') refreshUserPickers();
 }
 
 /**
@@ -200,13 +200,12 @@ function openSetRentModal() {
     const today = new Date();
     document.getElementById('setRentDate').value =
         `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    document.getElementById('setRentUser').value    = localStorage.getItem('lastRentUser') || '';
     document.getElementById('setRentPurpose').value = '';
     const searchEl = document.getElementById('setSearchInput');
     if (searchEl) searchEl.value = '';
 
-    if (typeof populateUserDatalist === 'function') populateUserDatalist();
     populateSetDeptSelect();
+    setUserPickerValue('setRentUserPicker', localStorage.getItem('lastRentUser') || '');
 
     renderQuickSets();
     renderSetList();
@@ -328,8 +327,8 @@ async function confirmSetRent() {
     const dateVal    = document.getElementById('setRentDate').value;
 
     if (!userVal) {
-        showNotification('사용자를 입력해주세요.', 'error');
-        document.getElementById('setRentUser').focus();
+        showNotification('사용자를 선택해주세요.', 'error');
+        openUserPicker('setRentUserPicker');
         return;
     }
 
@@ -464,9 +463,9 @@ function reRentBundle(bundleId) {
     const b = rentBundlesData.find(x => x.bundleId === bundleId);
     if (!b) return;
 
-    if (b.userName) document.getElementById('setRentUser').value = b.userName;
-    if (b.purpose)  document.getElementById('setRentPurpose').value = b.purpose;
+    if (b.purpose) document.getElementById('setRentPurpose').value = b.purpose;
     populateSetDeptSelect();
+    if (b.userName)   setUserPickerValue('setRentUserPicker', b.userName);
     if (b.department) document.getElementById('setRentDepartment').value = b.department;
 
     const names = (b.itemNames || '').split('|').map(s => s.trim()).filter(Boolean);

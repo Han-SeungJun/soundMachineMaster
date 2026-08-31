@@ -166,22 +166,130 @@ async function returnItem() {
     await renderNotes(currentSelectedId);
 }
 
-// ── 사용자 드롭다운 (datalist 공용) ───────────────────────────────────────────
+// ── 사용자 선택기 (탭 한 번으로 선택 — 모바일 우선) ──────────────────────────
+// 개별 대여(#rentUserPicker)와 세트 대여(#setRentUserPicker)가 공용으로 사용한다.
+// 선택값은 각 picker의 data-value-input이 가리키는 hidden input에 그대로 들어가므로
+// 기존 대여 로직(document.getElementById('rentUser').value)은 변경 없이 동작한다.
+
+const USER_PICKER_SEARCH_MIN = 8; // 사용자 수가 이 이상일 때만 검색창 노출
 
 /**
- * #userList datalist를 usersData(없으면 USERS 폴백)로 채운다.
- * 개별 대여(#rentUser)와 세트 대여(#setRentUser)가 공용으로 사용한다.
+ * 사용자 목록을 반환한다. Users 시트(usersData) 우선, 없으면 config의 USERS 폴백.
+ * @returns {Array<{userName:string, department:string}>}
  */
-function populateUserDatalist() {
-    const dl = document.getElementById('userList');
-    if (!dl) return;
+function getUserOptions() {
     const source = (typeof usersData !== 'undefined' && usersData.length)
         ? usersData
-        : (typeof USERS !== 'undefined' ? USERS : []).map(u => (typeof u === 'string' ? { userName: u } : u));
-    dl.innerHTML = source
-        .filter(u => u && u.userName)
-        .map(u => `<option value="${escapeHtml(u.userName)}"></option>`)
-        .join('');
+        : (typeof USERS !== 'undefined' ? USERS : []);
+    return source
+        .map(u => (typeof u === 'string' ? { userName: u, department: '' } : u))
+        .filter(u => u && u.userName);
+}
+
+/**
+ * 선택기 하나를 현재 상태(선택값·검색어·열림여부)에 맞춰 렌더링한다.
+ * @param {string} pickerId
+ */
+function renderUserPicker(pickerId) {
+    const el = document.getElementById(pickerId);
+    if (!el) return;
+
+    const valueInput = document.getElementById(el.dataset.valueInput);
+    const current    = valueInput ? valueInput.value.trim() : '';
+    const users      = getUserOptions();
+    const query      = el.dataset.query || '';
+    const q          = query.toLowerCase();
+    const list       = q ? users.filter(u => u.userName.toLowerCase().includes(q)) : users;
+    const isOpen     = el.classList.contains('open');
+    const showSearch = users.length >= USER_PICKER_SEARCH_MIN || !!query;
+    const canManual  = !!query && !users.some(u => u.userName === query);
+
+    el.innerHTML = `
+        <button type="button" class="user-picker-btn${current ? ' filled' : ''}" data-act="toggle">
+            <i class="fas fa-user"></i>
+            <span class="user-picker-value">${current ? escapeHtml(current) : '사용자 선택'}</span>
+            <i class="fas fa-chevron-down user-picker-caret"></i>
+        </button>
+        <div class="user-picker-panel"${isOpen ? '' : ' hidden'}>
+            ${showSearch
+                ? `<input type="text" class="user-picker-search" placeholder="이름 검색 · 직접 입력" value="${escapeHtml(query)}">`
+                : ''}
+            <div class="user-picker-list">
+                ${list.length
+                    ? list.map(u => `<button type="button" class="user-picker-opt${u.userName === current ? ' on' : ''}" data-user="${escapeHtml(u.userName)}">
+                            <span>${escapeHtml(u.userName)}</span>${u.department ? `<em>${escapeHtml(u.department)}</em>` : ''}
+                        </button>`).join('')
+                    : `<div class="user-picker-empty">${users.length ? '검색 결과가 없습니다.' : '등록된 사용자가 없습니다. (Users 시트 확인)'}</div>`}
+            </div>
+            ${canManual
+                ? `<button type="button" class="user-picker-manual" data-user="${escapeHtml(query)}">
+                       <i class="fas fa-pen"></i> '${escapeHtml(query)}' (으)로 직접 입력
+                   </button>`
+                : ''}
+        </div>`;
+
+    el.onclick = e => {
+        const opt = e.target.closest('[data-user]');
+        if (opt) { pickUser(pickerId, opt.dataset.user); return; }
+        if (e.target.closest('[data-act="toggle"]')) toggleUserPicker(pickerId);
+    };
+
+    const search = el.querySelector('.user-picker-search');
+    if (search) {
+        search.oninput = () => {
+            el.dataset.query = search.value;
+            renderUserPicker(pickerId);
+            const next = el.querySelector('.user-picker-search');
+            if (next) { next.focus(); next.setSelectionRange(next.value.length, next.value.length); }
+        };
+    }
+}
+
+/** 화면의 모든 사용자 선택기를 다시 그린다(Users 시트 로딩 완료 시 등). */
+function refreshUserPickers() {
+    document.querySelectorAll('.user-picker').forEach(el => renderUserPicker(el.id));
+}
+
+/** 열려 있는 선택기를 모두 닫는다. */
+function closeAllUserPickers() {
+    document.querySelectorAll('.user-picker.open').forEach(el => {
+        el.classList.remove('open');
+        el.dataset.query = '';
+        renderUserPicker(el.id);
+    });
+}
+
+function toggleUserPicker(pickerId) {
+    const el = document.getElementById(pickerId);
+    if (!el) return;
+    const willOpen = !el.classList.contains('open');
+    closeAllUserPickers();
+    if (willOpen) el.classList.add('open');
+    renderUserPicker(pickerId);
+}
+
+/** 닫혀 있을 때만 연다(필수 입력 검증 실패 시 안내용). */
+function openUserPicker(pickerId) {
+    const el = document.getElementById(pickerId);
+    if (el && !el.classList.contains('open')) toggleUserPicker(pickerId);
+}
+
+/** 사용자 선택 확정 → hidden input 갱신 + 부서 자동완성. */
+function pickUser(pickerId, userName) {
+    setUserPickerValue(pickerId, userName);
+    const el = document.getElementById(pickerId);
+    if (el && el.dataset.deptSelect) onUserPicked(el.dataset.deptSelect, userName);
+}
+
+/** 선택값을 코드로 지정한다(모달 열기 프리필 · 다시 대여 등). */
+function setUserPickerValue(pickerId, value) {
+    const el = document.getElementById(pickerId);
+    if (!el) return;
+    const valueInput = document.getElementById(el.dataset.valueInput);
+    if (valueInput) valueInput.value = (value || '').trim();
+    el.classList.remove('open');
+    el.dataset.query = '';
+    renderUserPicker(pickerId);
 }
 
 /**
@@ -211,7 +319,8 @@ function openRentModal() {
 
     document.getElementById('rentModalSubtitle').innerText = item.name;
 
-    populateUserDatalist();
+    setUserPickerValue('rentUserPicker',
+        (item.user && item.user !== '-') ? item.user : (localStorage.getItem('lastRentUser') || ''));
 
     const sel = document.getElementById('rentDepartment');
     sel.innerHTML = '<option value="">-- 부서 선택 --</option>';
@@ -226,7 +335,6 @@ function openRentModal() {
     const today = new Date();
     document.getElementById('rentDate').value =
         `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    document.getElementById('rentUser').value    = (item.user    && item.user    !== '-') ? item.user    : '';
     document.getElementById('rentPurpose').value = (item.purpose && item.purpose !== '-') ? item.purpose : '';
 
     const confirmBtn = document.getElementById('rentConfirmBtn');
@@ -252,8 +360,8 @@ async function confirmRent() {
     const dateVal    = document.getElementById('rentDate').value;
 
     if (!userVal) {
-        showNotification('사용자를 입력해주세요.', 'error');
-        document.getElementById('rentUser').focus();
+        showNotification('사용자를 선택해주세요.', 'error');
+        openUserPicker('rentUserPicker');
         return;
     }
 

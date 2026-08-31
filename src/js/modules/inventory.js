@@ -104,7 +104,10 @@ function _renderListView(container, data) {
                             <td>
                                 <div class="name-cell">
                                     <div class="mini-icon ${bgc}"><i class="fas ${item.icon}"></i></div>
-                                    <strong>${item.name}</strong>
+                                    <div class="name-cell-text">
+                                        <span class="row-cat-chip">${item.category}</span>
+                                        <strong>${item.name}</strong>
+                                    </div>
                                 </div>
                             </td>
                             <td style="color:var(--text-muted);font-size:12.5px;">${item.category}</td>
