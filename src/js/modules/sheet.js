@@ -338,6 +338,19 @@ async function saveSetForm() {
 
     if (!items.length) { showNotification('구성 장비를 1개 이상 추가하세요.', 'error'); return; }
 
+    // 재고에 없는 장비명은 대여 시 조용히 매칭 실패로 이어지므로 저장 전에 확인시킨다.
+    const known   = new Set(inventoryData.map(i => i.name));
+    const unknown = items.map(it => it.itemName).filter(n => !known.has(n));
+    if (unknown.length &&
+        !confirm(`재고에 없는 장비명이 있습니다:
+
+${unknown.join(', ')}
+
+` +
+                 '이대로 저장하면 대여 시 "미등록"으로 표시되고 매칭되지 않습니다. 계속할까요?')) {
+        return;
+    }
+
     const set = {
         setName:     setName,
         team:        document.getElementById('sf_team').value.trim(),

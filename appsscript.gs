@@ -670,8 +670,10 @@ function rentSetItems(params) {
   const deptCol    = findCol('사용 부서');
   const dateCol    = findCol('사용 날짜');
 
-  const succeeded = [];
-  const failed    = [];
+  const succeeded      = [];
+  const failed         = [];
+  const succeededNames = [];  // 실제 대여 성공한 장비명만 — 묶음 기록의 근거
+  const failedNames    = [];
 
   items.forEach(function(it) {
     try {
@@ -697,32 +699,103 @@ function rentSetItems(params) {
         g('사용자'), g('사용 목적'), g('사용 부서'), g('사용 날짜'), g('수정 링크'), ''
       );
       succeeded.push(it.itemId);
+      succeededNames.push(g('장비명'));
     } catch (e) {
       Logger.log('rentSet 개별 오류 itemId=' + it.itemId + ': ' + e.toString());
       failed.push(it.itemId);
     }
   });
 
-  // 성공분이 있으면 RentBundles에 1행 기록 (실패해도 대여 자체는 성공 처리)
+  // 실패한 itemId의 장비명을 조회해 클라이언트가 무엇이 빠졌는지 알 수 있게 한다.
+  failed.forEach(function(id) {
+    try {
+      const row = findSheetRowByItemId(mainSheet, id);
+      if (row === -1) { failedNames.push(String(id)); return; }
+      const vals = mainSheet.getRange(row, 1, 1, lastCol).getValues()[0];
+      var name = '';
+      headers.forEach(function(h, i) {
+        if (!name && h && String(h).trim().indexOf('장비명') !== -1) name = String(vals[i] || '').trim();
+      });
+      failedNames.push(name || String(id));
+    } catch (e) { failedNames.push(String(id)); }
+  });
+
+  // 성공분이 있으면 RentBundles에 기록. itemNames는 클라이언트가 보낸 전체 목록이 아니라
+  // 실제 성공한 장비명만 사용한다 — 부분 실패 시 대여되지 않은 장비가 묶음에 남아
+  // '다시 대여'가 잘못된 구성을 재현하는 것을 막는다.
   if (succeeded.length > 0) {
-    try { recordRentBundle_(common, bundle); }
+    try { recordRentBundle_(common, bundle, succeededNames.join('|')); }
     catch (e) { Logger.log('RentBundles 기록 오류: ' + e.toString()); }
   }
 
-  return { success: failed.length === 0, succeeded: succeeded, failed: failed };
+  return {
+    success: failed.length === 0,
+    succeeded: succeeded, failed: failed, failedNames: failedNames
+  };
 }
 
-/** RentBundles 시트에 대여 묶음 1행을 append 합니다(v1: 항상 append). */
-function recordRentBundle_(common, bundle) {
+/** 묶음 동일성 판정 키: 장비명을 정렬해 순서 차이를 무시합니다. */
+function bundleSignature_(itemNames) {
+  return String(itemNames || '').split('|')
+    .map(function(x) { return x.trim(); })
+    .filter(function(x) { return x; })
+    .sort().join('|');
+}
+
+/**
+ * RentBundles에 대여 묶음을 기록합니다.
+ * 같은 사용자가 같은 구성을 다시 빌리면 새 행을 만들지 않고 UseCount를 올리고
+ * LastUsedAt만 갱신합니다(IsFavorite 보존). 행이 무한히 늘어나는 것을 막고
+ * UseCount가 실제 사용 빈도를 반영하게 합니다.
+ * @param {Object} common
+ * @param {Object} bundle
+ * @param {string} itemNames 실제 대여 성공한 장비명 '|' 목록
+ */
+function recordRentBundle_(common, bundle, itemNames) {
   const sheet = getRentBundlesSheet();
   const now   = new Date();
+  const names = itemNames || bundle.itemNames || '';
+  const sig   = bundleSignature_(names);
+  const user  = common.user || '';
+
+  const info      = headerColMap_(sheet);
+  const userCol   = colIndex_(info.map, 'UserName');
+  const namesCol  = colIndex_(info.map, 'ItemNames');
+  const countCol  = colIndex_(info.map, 'UseCount');
+  const lastCol_  = colIndex_(info.map, 'LastUsedAt');
+
+  if (sig && userCol !== -1 && namesCol !== -1) {
+    const data = sheet.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][userCol]).trim() !== String(user).trim()) continue;
+      if (bundleSignature_(data[i][namesCol]) !== sig) continue;
+
+      if (countCol !== -1) {
+        const prev = Number(data[i][countCol]);
+        sheet.getRange(i + 1, countCol + 1).setValue((isNaN(prev) ? 0 : prev) + 1);
+      }
+      if (lastCol_ !== -1) sheet.getRange(i + 1, lastCol_ + 1).setValue(now);
+
+      // 목적/부서/사용일은 최신 대여 기준으로 갱신 (IsFavorite은 사용자 설정이라 보존)
+      ['Purpose', 'Department', 'UsageDate'].forEach(function(label) {
+        const c = colIndex_(info.map, label);
+        if (c === -1) return;
+        const v = label === 'Purpose'    ? common.purpose
+                : label === 'Department' ? common.department
+                :                          common.usageDate;
+        if (v != null && v !== '') sheet.getRange(i + 1, c + 1).setValue(v);
+      });
+      return;
+    }
+  }
+
   appendByHeaders_(sheet, {
     'BundleID':   'B' + now.getTime(),
-    'UserName':   common.user       || '',
+    'UserName':   user,
     'SetID':      bundle.setId      || '',
     'SetName':    bundle.setName    || '',
     'Team':       bundle.team       || '',
-    'ItemNames':  bundle.itemNames  || '',
+    'ItemNames':  names,
     'Purpose':    common.purpose    || '',
     'Department': common.department || '',
     'UsageDate':  common.usageDate  || '',

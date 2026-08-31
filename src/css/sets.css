@@ -248,6 +248,8 @@
 }
 .set-comp-badge.ok    { background: rgba(16, 185, 129, 0.12); color: #059669; }
 .set-comp-badge.short { background: rgba(245, 158, 11, 0.14); color: #b45309; }
+/* 미등록: 재고에 그 장비명이 아예 없음 — 단순 부족과 구분해 시트 오타를 드러낸다 */
+.set-comp-badge.missing { background: rgba(239, 68, 68, 0.13); color: #b91c1c; }
 
 .set-comp-warn {
     display: flex;
