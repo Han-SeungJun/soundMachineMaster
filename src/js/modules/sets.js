@@ -90,7 +90,7 @@ async function loadUsers() {
         usersData = (typeof USERS !== 'undefined' ? USERS : []).map(u =>
             typeof u === 'string' ? { userName: u, department: '' } : u);
     }
-    if (typeof populateUserDatalist === 'function') populateUserDatalist();
+    if (typeof refreshUserPickers === 'function') refreshUserPickers();
 }
 
 /**
@@ -140,16 +140,17 @@ function resolveSetUnits(setId) {
 
     comps.forEach(c => {
         const need  = c.quantity || 1;
-        const avail = inventoryData.filter(inv =>
-            inv.name === c.itemName &&
-            (!c.category || inv.category === c.category) &&
-            (inv.status || '').trim() === '가용' &&
-            !usedIds.has(inv.id)
-        );
+        const units = inventoryData.filter(inv =>
+            inv.name === c.itemName && (!c.category || inv.category === c.category));
+        const avail = units.filter(inv =>
+            (inv.status || '').trim() === '가용' && !usedIds.has(inv.id));
         const take = avail.slice(0, need);
         take.forEach(u => { usedIds.add(u.id); matchedIds.push(u.id); });
-        if (take.length < need) shortages.push({ itemName: c.itemName, need, have: take.length });
-        detail.push({ itemName: c.itemName, category: c.category, need, have: take.length, ids: take.map(u => u.id) });
+
+        // 재고에 아예 없는 이름(오타·삭제된 장비)과 단순 부족을 구분한다.
+        const missing = units.length === 0;
+        if (take.length < need) shortages.push({ itemName: c.itemName, need, have: take.length, missing });
+        detail.push({ itemName: c.itemName, category: c.category, need, have: take.length, missing, ids: take.map(u => u.id) });
     });
 
     return {
@@ -174,12 +175,15 @@ function resolveAdhocUnits(names, bundle) {
 
     Object.keys(counts).forEach(name => {
         const need  = counts[name];
-        const avail = inventoryData.filter(inv =>
-            inv.name === name && (inv.status || '').trim() === '가용' && !usedIds.has(inv.id));
+        const units = inventoryData.filter(inv => inv.name === name);
+        const avail = units.filter(inv =>
+            (inv.status || '').trim() === '가용' && !usedIds.has(inv.id));
         const take = avail.slice(0, need);
         take.forEach(u => { usedIds.add(u.id); matchedIds.push(u.id); });
-        if (take.length < need) shortages.push({ itemName: name, need, have: take.length });
-        detail.push({ itemName: name, category: '', need, have: take.length, ids: take.map(u => u.id) });
+
+        const missing = units.length === 0;
+        if (take.length < need) shortages.push({ itemName: name, need, have: take.length, missing });
+        detail.push({ itemName: name, category: '', need, have: take.length, missing, ids: take.map(u => u.id) });
     });
 
     return {
@@ -200,13 +204,12 @@ function openSetRentModal() {
     const today = new Date();
     document.getElementById('setRentDate').value =
         `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    document.getElementById('setRentUser').value    = localStorage.getItem('lastRentUser') || '';
     document.getElementById('setRentPurpose').value = '';
     const searchEl = document.getElementById('setSearchInput');
     if (searchEl) searchEl.value = '';
 
-    if (typeof populateUserDatalist === 'function') populateUserDatalist();
     populateSetDeptSelect();
+    setUserPickerValue('setRentUserPicker', localStorage.getItem('lastRentUser') || '');
 
     renderQuickSets();
     renderSetList();
@@ -288,6 +291,27 @@ function selectSet(setId) {
 }
 
 /**
+ * 부족/미등록 구성에 대한 경고 문구를 만든다.
+ * '미등록'은 재고에 그 이름이 아예 없다는 뜻이라 시트 오타를 의심해야 한다.
+ * @param {{shortages:Array, matchedIds:Array}} sel
+ * @returns {string} HTML
+ */
+function renderSetShortageWarn(sel) {
+    if (!sel.shortages.length) return '';
+    const missing = sel.shortages.filter(s => s.missing);
+    const short   = sel.shortages.filter(s => !s.missing);
+    const lines   = [];
+    if (short.length) lines.push(`부족 ${short.length}종`);
+    if (missing.length) {
+        lines.push(`미등록 ${missing.length}종(${missing.map(m => escapeHtml(m.itemName)).join(', ')}) — 세트 구성의 장비명이 재고와 다릅니다`);
+    }
+    return `<div class="set-comp-warn">
+        <i class="fas fa-triangle-exclamation"></i>
+        ${lines.join(' · ')} — 가용분(${sel.matchedIds.length}대)만 대여됩니다.
+    </div>`;
+}
+
+/**
  * 선택된 세트의 구성 장비별 가용/부족 배지를 렌더링한다.
  */
 function renderSetComponents() {
@@ -300,16 +324,15 @@ function renderSetComponents() {
     area.innerHTML = `
         <div class="set-comp-head">${escapeHtml(title)} 구성 장비</div>
         ${sel.detail.map(d => {
-            const ok = d.have >= d.need;
+            const ok    = d.have >= d.need;
+            const state = ok ? 'ok' : (d.missing ? 'missing' : 'short');
+            const label = ok ? '가용' : (d.missing ? '미등록' : '부족');
             return `<div class="set-comp-row ${ok ? '' : 'short'}">
                 <span class="set-comp-name">${escapeHtml(d.itemName)}${d.category ? ` <em>${escapeHtml(d.category)}</em>` : ''}</span>
-                <span class="set-comp-badge ${ok ? 'ok' : 'short'}">${ok ? '가용' : '부족'} ${d.have}/${d.need}</span>
+                <span class="set-comp-badge ${state}">${label} ${d.have}/${d.need}</span>
             </div>`;
         }).join('')}
-        ${sel.shortages.length ? `<div class="set-comp-warn">
-            <i class="fas fa-triangle-exclamation"></i>
-            부족 ${sel.shortages.length}종 — 가용분(${sel.matchedIds.length}대)만 대여됩니다.
-        </div>` : ''}`;
+        ${renderSetShortageWarn(sel)}`;
 }
 
 /**
@@ -328,8 +351,8 @@ async function confirmSetRent() {
     const dateVal    = document.getElementById('setRentDate').value;
 
     if (!userVal) {
-        showNotification('사용자를 입력해주세요.', 'error');
-        document.getElementById('setRentUser').focus();
+        showNotification('사용자를 선택해주세요.', 'error');
+        openUserPicker('setRentUserPicker');
         return;
     }
 
@@ -370,8 +393,9 @@ async function confirmSetRent() {
         return;
     }
 
-    const succeeded = (result && result.succeeded) ? result.succeeded.map(String) : sel.matchedIds.map(String);
-    const failedN   = (result && result.failed) ? result.failed.length : 0;
+    const succeeded   = (result && result.succeeded) ? result.succeeded.map(String) : sel.matchedIds.map(String);
+    const failedNames = (result && result.failedNames) ? result.failedNames : [];
+    const failedN     = (result && result.failed) ? result.failed.length : 0;
 
     succeeded.forEach(idStr => {
         const item = inventoryData.find(i => String(i.id) === idStr);
@@ -390,8 +414,12 @@ async function confirmSetRent() {
     updateStats();
     initDashboard();
     closeSetRentModal();
+    // 실패 건은 개수만 알려주면 무엇을 다시 빌려야 할지 알 수 없어 장비명을 함께 표시한다.
+    const failText = failedN
+        ? ` · 실패 ${failedN}건${failedNames.length ? ` (${failedNames.join(', ')})` : ''}`
+        : '';
     showNotification(
-        `세트 대여 완료: 성공 ${succeeded.length}건${failedN ? ` · 실패 ${failedN}건` : ''}`,
+        `세트 대여 완료: 성공 ${succeeded.length}건${failText}`,
         failedN ? 'error' : 'success'
     );
 
@@ -464,9 +492,9 @@ function reRentBundle(bundleId) {
     const b = rentBundlesData.find(x => x.bundleId === bundleId);
     if (!b) return;
 
-    if (b.userName) document.getElementById('setRentUser').value = b.userName;
-    if (b.purpose)  document.getElementById('setRentPurpose').value = b.purpose;
+    if (b.purpose) document.getElementById('setRentPurpose').value = b.purpose;
     populateSetDeptSelect();
+    if (b.userName)   setUserPickerValue('setRentUserPicker', b.userName);
     if (b.department) document.getElementById('setRentDepartment').value = b.department;
 
     const names = (b.itemNames || '').split('|').map(s => s.trim()).filter(Boolean);

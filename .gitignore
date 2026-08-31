@@ -1,0 +1,8 @@
+# 카카오톡 대화 내보내기 (개인 대화 내용 — 저장소에 포함하지 않는다)
+KakaoTalk_*.txt
+
+# 로컬 개발 메모
+DEV_PROMPT_*.md
+
+# 의존성
+node_modules/
