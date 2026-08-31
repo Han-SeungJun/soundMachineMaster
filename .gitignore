@@ -3,3 +3,6 @@ KakaoTalk_*.txt
 
 # 로컬 개발 메모
 DEV_PROMPT_*.md
+
+# 의존성
+node_modules/

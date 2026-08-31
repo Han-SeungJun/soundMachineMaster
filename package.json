@@ -1,0 +1,11 @@
+{
+  "name": "soundreport",
+  "private": true,
+  "description": "교회 장비 대여/반납 관리 (정적 페이지 + Google Apps Script)",
+  "scripts": {
+    "test": "node test/smoke.js"
+  },
+  "devDependencies": {
+    "jsdom": "^26.0.0"
+  }
+}
