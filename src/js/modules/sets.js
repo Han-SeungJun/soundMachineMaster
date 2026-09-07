@@ -69,28 +69,7 @@ async function loadSets() {
         setsData = [];
         setItemsData = [];
     }
-}
-
-/**
- * Users를 로드해 usersData(state)를 채운다. 실패 시 config의 USERS 폴백 사용.
- */
-async function loadUsers() {
-    try {
-        const raw = await fetchGviz(USERS_SHEET_URL).then(gvizRowsToObjects);
-        usersData = raw.map(r => ({
-            userName:   gvStr(r['UserName']),
-            department: gvStr(r['Department']),
-            role:       gvStr(r['Role']),
-            isActive:   gvBool(r['IsActive'], true),
-            sortOrder:  gvNum(r['SortOrder'], 0)
-        })).filter(u => u.userName && u.isActive)
-          .sort((a, b) => a.sortOrder - b.sortOrder);
-    } catch (e) {
-        console.error('loadUsers 실패, 폴백 사용:', e);
-        usersData = (typeof USERS !== 'undefined' ? USERS : []).map(u =>
-            typeof u === 'string' ? { userName: u, department: '' } : u);
-    }
-    if (typeof refreshUserPickers === 'function') refreshUserPickers();
+    renderDashboardSets();
 }
 
 /**
@@ -119,6 +98,7 @@ async function loadRentBundles() {
         rentBundlesData = [];
     }
     renderQuickSets();
+    renderDashboardSets();
 }
 
 // ── 이름 → 가용 유닛 매칭 (§5) ────────────────────────────────────────────────
@@ -198,8 +178,13 @@ function resolveAdhocUnits(names, bundle) {
 
 // ── 세트 대여 모달 ─────────────────────────────────────────────────────────────
 
-function openSetRentModal() {
+/**
+ * 세트 대여 모달을 연다.
+ * @param {string} [preselectSetId] - 대시보드 세트 타일에서 바로 들어올 때 미리 고를 세트
+ */
+function openSetRentModal(preselectSetId) {
     currentSetSelection = null;
+    resetCustomPicker();
 
     const today = new Date();
     document.getElementById('setRentDate').value =
@@ -214,15 +199,18 @@ function openSetRentModal() {
     renderQuickSets();
     renderSetList();
     document.getElementById('setCompList').innerHTML =
-        '<div class="set-comp-empty">세트를 선택하면 구성 장비가 표시됩니다.</div>';
+        '<div class="set-comp-empty">세트를 선택하거나 아래 커스텀에서 장비를 직접 담아보세요.</div>';
     document.getElementById('setRentConfirmBtn').disabled = true;
 
     document.getElementById('setRentModal').classList.add('active');
+
+    if (preselectSetId) selectSet(preselectSetId);
 }
 
 function closeSetRentModal() {
     document.getElementById('setRentModal').classList.remove('active');
     currentSetSelection = null;
+    resetCustomPicker();
 }
 
 function populateSetDeptSelect() {
@@ -270,7 +258,7 @@ function renderSetList() {
                 const short = res.shortages.length > 0;
                 const on    = currentSetSelection && currentSetSelection.setId === s.setId && !currentSetSelection.adhoc;
                 const iconStyle = s.color ? `background:${s.color}1a;color:${s.color};` : '';
-                return `<button class="set-card-btn ${on ? 'on' : ''}" onclick="selectSet('${s.setId}')">
+                return `<button class="set-card-btn ${on ? 'on' : ''}" onclick="selectSet('${escapeAttrArg(s.setId)}')">
                     <span class="set-card-icon" style="${iconStyle}"><i class="fas ${s.icon || 'fa-box'}"></i></span>
                     <span class="set-card-body">
                         <span class="set-card-name">${escapeHtml(s.setName)}</span>
@@ -285,6 +273,8 @@ function renderSetList() {
 
 function selectSet(setId) {
     currentSetSelection = resolveSetUnits(setId);
+    customPickIds = [];   // 세트를 새로 고르면 커스텀 편집분은 버린다
+    setCustomMode(false);
     renderSetList();
     renderSetComponents();
     document.getElementById('setRentConfirmBtn').disabled = currentSetSelection.matchedIds.length === 0;
@@ -320,9 +310,18 @@ function renderSetComponents() {
     if (!area) return;
     if (!sel) { area.innerHTML = ''; return; }
 
-    const title = sel.setName || '선택한 묶음';
+    const title = sel.custom ? '커스텀 구성' : (sel.setName || '선택한 묶음');
+    // 커스텀 편집 중에는 아래 커스텀 목록이 그 역할을 하므로 버튼을 중복 노출하지 않는다.
+    const customizeBtn = sel.custom ? '' :
+        `<button type="button" class="set-comp-customize" onclick="customizeCurrentSet()">
+            <i class="fas fa-sliders"></i> 이 구성 커스텀하기
+        </button>`;
+
     area.innerHTML = `
-        <div class="set-comp-head">${escapeHtml(title)} 구성 장비</div>
+        <div class="set-comp-head">
+            <span>${escapeHtml(title)} 구성 장비 <em>${sel.matchedIds.length}대</em></span>
+            ${customizeBtn}
+        </div>
         ${sel.detail.map(d => {
             const ok    = d.have >= d.need;
             const state = ok ? 'ok' : (d.missing ? 'missing' : 'short');
@@ -468,10 +467,10 @@ function renderQuickSets() {
         const cnt   = (b.itemNames || '').split('|').filter(Boolean).length;
         const label = b.setName || `${cnt}종 묶음`;
         return `<div class="quick-chip">
-            <button class="quick-chip-main" onclick="reRentBundle('${b.bundleId}')" title="이 묶음으로 다시 대여">
+            <button class="quick-chip-main" onclick="reRentBundle('${escapeAttrArg(b.bundleId)}')" title="이 묶음으로 다시 대여">
                 <i class="fas fa-rotate-left"></i> ${escapeHtml(label)} <em>${cnt}대</em>
             </button>
-            <button class="quick-chip-fav ${b.isFavorite ? 'on' : ''}" onclick="toggleSetFavorite('${b.bundleId}', event)" title="즐겨찾기">
+            <button class="quick-chip-fav ${b.isFavorite ? 'on' : ''}" onclick="toggleSetFavorite('${escapeAttrArg(b.bundleId)}', event)" title="즐겨찾기">
                 <i class="fas fa-star"></i>
             </button>
         </div>`;
@@ -499,9 +498,17 @@ function reRentBundle(bundleId) {
 
     const names = (b.itemNames || '').split('|').map(s => s.trim()).filter(Boolean);
     currentSetSelection = resolveAdhocUnits(names, b);
+    customPickIds = [];   // 묶음을 새로 고르면 커스텀 편집분은 버린다
+    setCustomMode(false);
     renderSetList();
     renderSetComponents();
     document.getElementById('setRentConfirmBtn').disabled = currentSetSelection.matchedIds.length === 0;
+}
+
+/** 대시보드 칩에서 바로 들어올 때 — 모달을 열고 그 묶음을 적용한다. */
+function openBundleRent(bundleId) {
+    openSetRentModal();
+    reRentBundle(bundleId);
 }
 
 /** 즐겨찾기 토글(낙관적 갱신 + 실패 시 롤백). */

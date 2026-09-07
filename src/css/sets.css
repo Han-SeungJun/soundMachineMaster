@@ -377,3 +377,271 @@
     margin-top: 4px;
 }
 .set-form-add-item:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ═══ 대시보드 세트 대여 카드 ═══ */
+
+.dash-sets-actions { display: flex; align-items: center; gap: 6px; }
+.dash-sets-actions .text-btn { white-space: nowrap; }
+
+.dash-sets-area { display: flex; flex-direction: column; gap: 4px; }
+
+.dash-sets-empty {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    padding: 14px 12px;
+    background: var(--bg-main);
+    border-radius: var(--radius-sm);
+}
+
+.dash-sets-link {
+    border: none;
+    background: none;
+    padding: 0;
+    font: inherit;
+    font-weight: 700;
+    color: var(--primary);
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.dash-sets-row-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin: 8px 2px 7px;
+}
+.dash-sets-row-label i { font-size: 10px; color: var(--accent-orange); }
+
+.dash-quick-row { display: flex; flex-wrap: wrap; gap: 7px; }
+
+.dash-quick-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 13px;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    background: var(--bg-card);
+    font-size: 12.5px;
+    font-weight: 600;
+    font-family: inherit;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: var(--t);
+}
+.dash-quick-chip:hover {
+    border-color: var(--primary-light);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+}
+.dash-quick-chip i        { font-size: 11px; color: var(--primary); }
+.dash-quick-chip i.fav    { color: var(--accent-orange); }
+.dash-quick-chip em       { font-style: normal; font-size: 11px; font-weight: 700; color: var(--text-muted); }
+
+/* 타일은 자동 채움 — 세트 수가 적어도 어색하게 늘어나지 않는다 */
+.dash-set-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 8px;
+}
+
+.dash-set-tile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 12px;
+    background: var(--bg-card);
+    border: 1.5px solid #e2e8f0;
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: var(--t);
+}
+.dash-set-tile:hover {
+    border-color: var(--primary-light);
+    background: #fafbff;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.dash-set-tile.custom {
+    border-style: dashed;
+    border-color: #cbd5e1;
+    background: var(--bg-main);
+}
+.dash-set-tile.custom:hover { border-color: var(--primary); background: #f5f6ff; }
+.dash-set-tile.custom .dst-icon { background: rgba(99, 102, 241, 0.12); color: var(--primary-dark); }
+
+.dst-icon {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--primary);
+    font-size: 14px;
+}
+
+.dst-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.dst-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-main);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.dst-meta { font-size: 11px; color: var(--text-muted); }
+
+.dst-avail {
+    flex-shrink: 0;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+.dst-avail.ok    { background: rgba(16, 185, 129, 0.12); color: #059669; }
+.dst-avail.short { background: rgba(245, 158, 11, 0.14); color: #b45309; }
+
+.dst-arrow { flex-shrink: 0; font-size: 11px; color: var(--text-muted); }
+
+/* ═══ 커스텀 구성 (세트 대여 모달) ═══ */
+
+.set-custom-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.set-custom-right { display: flex; align-items: center; gap: 8px; }
+
+.set-custom-count {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.set-custom-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 11px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 999px;
+    background: var(--bg-card);
+    color: var(--text-muted);
+    font-size: 11.5px;
+    font-weight: 700;
+    font-family: inherit;
+    text-transform: none;
+    letter-spacing: 0;
+    cursor: pointer;
+    transition: var(--t);
+}
+.set-custom-toggle:hover { border-color: var(--primary-light); color: var(--primary); }
+.set-custom-toggle.on {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: #fff;
+}
+
+.set-custom-area {
+    padding: 12px;
+    background: var(--bg-main);
+    border-radius: var(--radius-sm);
+}
+
+.set-custom-hint {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.set-custom-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-height: 260px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-top: 8px;
+}
+
+.set-custom-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 11px;
+    background: var(--bg-card);
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: var(--t);
+}
+.set-custom-item:hover { border-color: var(--primary-light); }
+.set-custom-item.on {
+    border-color: var(--primary);
+    background: #f5f6ff;
+}
+
+.sci-check { flex-shrink: 0; font-size: 16px; color: #cbd5e1; }
+.set-custom-item.on .sci-check { color: var(--primary); }
+
+.sci-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.sci-name { font-size: 13px; font-weight: 600; color: var(--text-main); }
+.sci-meta { font-size: 11px; color: var(--text-muted); }
+
+.set-custom-more {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 8px 4px 2px;
+}
+
+/* ── 선택 구성 헤더 · 커스텀 전환 버튼 ── */
+.set-comp-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+.set-comp-head em {
+    font-style: normal;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.set-comp-customize {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border: 1px solid var(--primary-light);
+    border-radius: 999px;
+    background: var(--bg-card);
+    color: var(--primary-dark);
+    font-size: 11px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: var(--t);
+    white-space: nowrap;
+}
+.set-comp-customize:hover { background: #f5f6ff; }

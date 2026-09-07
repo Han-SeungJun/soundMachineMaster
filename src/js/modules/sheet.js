@@ -264,8 +264,8 @@ function renderSetMgmt() {
                 <div class="set-mgmt-meta">${s.team ? escapeHtml(s.team) + ' · ' : ''}${comps.length}종 · ${total}대</div>
             </div>
             ${sheetAdminUnlocked ? `<div class="set-mgmt-actions">
-                <button class="set-mgmt-edit-btn" onclick="openSetFormModal('${s.setId}')"><i class="fas fa-pen"></i> 수정</button>
-                <button class="set-mgmt-del-btn" onclick="deleteSetMgmt('${s.setId}')"><i class="fas fa-trash"></i></button>
+                <button class="set-mgmt-edit-btn" onclick="openSetFormModal('${escapeAttrArg(s.setId)}')"><i class="fas fa-pen"></i> 수정</button>
+                <button class="set-mgmt-del-btn" onclick="deleteSetMgmt('${escapeAttrArg(s.setId)}')"><i class="fas fa-trash"></i></button>
             </div>` : ''}
         </div>`;
     }).join('');

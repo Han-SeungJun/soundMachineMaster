@@ -413,6 +413,21 @@
     /* iOS 자동 확대 방지: 16px 이상 유지 */
     .user-picker-search { font-size: 16px; padding: 12px; }
     .user-picker-list   { max-height: 46vh; }
+    .user-picker-add    { min-height: 48px; font-size: 14px; }
+    .user-picker-add-form .upa-name,
+    .user-picker-add-form .upa-dept { font-size: 16px; min-height: 46px; }
+    .upa-cancel, .upa-save { min-height: 46px; font-size: 14px; }
+
+    /* ══ 대시보드 세트 대여 / 커스텀 구성 (모바일) ══ */
+    .dash-set-tiles     { grid-template-columns: 1fr; }
+    .dash-set-tile      { min-height: 56px; }
+    .dash-quick-chip    { min-height: 42px; font-size: 13px; }
+    .dash-sets-actions  { flex-wrap: wrap; }
+    .set-custom-item    { min-height: 52px; }
+    .set-custom-toggle  { min-height: 36px; }
+    .set-custom-area .local-input { font-size: 16px; }
+    .set-custom-list    { max-height: 44vh; }
+    .set-comp-head      { flex-wrap: wrap; gap: 6px; }
 
     .name-cell {
         gap: 7px;

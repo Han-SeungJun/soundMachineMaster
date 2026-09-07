@@ -65,6 +65,24 @@ function escapeHtml(str) {
 }
 
 /**
+ * 인라인 핸들러의 문자열 인자용 이스케이프 (onclick="fn('...')").
+ *
+ * HTML 엔티티(&#39;)로는 막을 수 없다 — 속성값은 JS로 넘어가기 전에 디코드되므로
+ * 엔티티가 다시 따옴표가 되어 문자열이 끊긴다. 그래서 JS 문자열용으로 먼저
+ * 역슬래시 이스케이프한 뒤, 속성용으로 HTML 이스케이프한다(순서가 중요).
+ * escapeHtml은 작은따옴표·역슬래시를 건드리지 않아 이 조합이 안전하다.
+ *
+ * @param {string|number} str
+ * @returns {string}
+ */
+function escapeAttrArg(str) {
+    const BS = String.fromCharCode(92);
+    return escapeHtml(String(str == null ? '' : str)
+        .split(BS).join(BS + BS)
+        .split("'").join(BS + "'"));
+}
+
+/**
  * 평문 비밀번호 → SHA-256 해시 (hex)
  * @param {string} pw
  * @returns {Promise<string>}

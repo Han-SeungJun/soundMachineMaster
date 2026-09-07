@@ -275,6 +275,9 @@ function doPost(e) {
     } else if (action === 'toggleFavorite') {
       return ContentService.createTextOutput(JSON.stringify(toggleFavoriteInSheet(params)))
         .setMimeType(ContentService.MimeType.JSON);
+    } else if (action === 'addUser') {
+      return ContentService.createTextOutput(JSON.stringify(addUserToSheet(params)))
+        .setMimeType(ContentService.MimeType.JSON);
     }
 
     return ContentService.createTextOutput(JSON.stringify({ error: 'Unknown action' }))
@@ -903,6 +906,48 @@ function toggleFavoriteInSheet(params) {
     }
   }
   return { success: false, error: '해당 묶음 없음' };
+}
+
+// ─── 사용자 추가 (addUser) ───────────────────────────────────────────────────
+
+/**
+ * Users 시트에 사용자 1명을 추가합니다. 대여 화면의 "추가하기"에서 호출합니다.
+ * 이름이 이미 있으면 추가하지 않고 already:true로 알려줍니다(중복 행 방지).
+ * @param {{user:{userName:string, department:string, role:string, sortOrder:number}}} params
+ * @returns {{success:boolean, already?:boolean, error?:string}}
+ */
+function addUserToSheet(params) {
+  const user = params.user || {};
+  const name = String(user.userName == null ? '' : user.userName).trim();
+  if (!name) return { success: false, error: '이름 누락' };
+
+  const sheet = getUsersSheet();
+  const info  = headerColMap_(sheet);
+  const idx   = colIndex_(info.map, 'UserName');
+  if (idx === -1) return { success: false, error: 'UserName 컬럼 없음' };
+
+  // 중복 확인 + 정렬 순서 계산을 한 번의 읽기로 처리합니다.
+  const data     = sheet.getDataRange().getValues();
+  const orderCol = colIndex_(info.map, 'SortOrder');
+  var maxOrder = 0;
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][idx]).trim() === name) return { success: true, already: true };
+    if (orderCol !== -1) {
+      const n = Number(data[i][orderCol]);
+      if (!isNaN(n) && n > maxOrder) maxOrder = n;
+    }
+  }
+
+  const sortOrder = Number(user.sortOrder);
+  appendByHeaders_(sheet, {
+    'UserName':   name,
+    'Department': user.department || '',
+    'Role':       user.role || '',
+    'IsActive':   true,
+    'SortOrder':  (!isNaN(sortOrder) && sortOrder > 0) ? sortOrder : (maxOrder + 10)
+  });
+
+  return { success: true };
 }
 
 // ─── 권한 승인 (최초 1회 실행) ───────────────────────────────────────────────

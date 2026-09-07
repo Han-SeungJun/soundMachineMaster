@@ -143,6 +143,17 @@
                 </div>
 
                 <div class="dashboard-grid">
+                    <div class="card wide dash-sets-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-boxes-packing"
+                                    style="color:var(--primary);margin-right:7px;font-size:13px;"></i>세트로 바로 대여</h3>
+                            <div class="dash-sets-actions">
+                                <button class="text-btn" onclick="openCustomSetRent()"><i class="fas fa-sliders"></i> 커스텀</button>
+                                <button class="text-btn" onclick="openSetRentModal()">전체 세트 <i class="fas fa-arrow-right"></i></button>
+                            </div>
+                        </div>
+                        <div id="dashSetsArea" class="dash-sets-area"></div>
+                    </div>
                     <div class="card wide">
                         <div class="card-header">
                             <h3><i class="fas fa-clock-rotate-left"
@@ -569,6 +580,22 @@
 
                 <div id="setCompList" class="set-comp-list"></div>
 
+                <div class="set-section-label set-custom-head">
+                    <span>직접 고르기</span>
+                    <span class="set-custom-right">
+                        <span id="setCustomCount" class="set-custom-count">0대 담김</span>
+                        <button type="button" class="set-custom-toggle" id="setCustomToggleBtn" onclick="toggleCustomMode()">
+                            <i class="fas fa-sliders"></i> 커스텀
+                        </button>
+                    </span>
+                </div>
+                <div id="setCustomArea" class="set-custom-area" hidden>
+                    <div class="set-custom-hint">가용 장비를 눌러 담고, 다시 누르면 뺍니다. 담은 그대로 대여됩니다.</div>
+                    <input type="text" id="setCustomSearch" class="local-input"
+                           placeholder="장비명 · 카테고리 · 위치로 검색..." oninput="renderCustomPicker()">
+                    <div id="setCustomList" class="set-custom-list"></div>
+                </div>
+
                 <div class="set-section-label">대여 정보</div>
                 <div class="detail-grid" style="gap:14px;">
                     <div class="detail-item fw">
@@ -627,8 +654,10 @@
     <script src="src/js/modules/inventory.js"></script>
     <script src="src/js/modules/dashboard.js"></script>
     <script src="src/js/modules/notes.js"></script>
+    <script src="src/js/modules/users.js"></script>
     <script src="src/js/modules/modal.js"></script>
     <script src="src/js/modules/sets.js"></script>
+    <script src="src/js/modules/set-custom.js"></script>
     <script src="src/js/modules/stats.js"></script>
     <script src="src/js/modules/sheet.js"></script>
     <script src="src/js/modules/history-calendar.js"></script>

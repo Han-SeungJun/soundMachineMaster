@@ -549,6 +549,78 @@ tbody tr:last-child td {
 
 .user-picker-manual:hover { background: rgba(99, 102, 241, .13); }
 
+/* 목록에 사람이 없을 때 여기서 바로 전역 추가 — 선택기가 막다른 길이 되지 않게 한다 */
+.user-picker-add {
+    width: 100%;
+    min-height: 44px;
+    padding: 11px 12px;
+    border: none;
+    border-top: 1px dashed #cbd5e1;
+    background: #fff;
+    color: var(--primary-dark);
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: var(--t);
+}
+.user-picker-add:hover { background: rgba(99, 102, 241, .09); }
+.user-picker-add i     { margin-right: 5px; }
+
+/* ── 사용자 추가 폼 (선택기 패널 안에서 열린다) ── */
+.user-picker-add-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+}
+
+.upa-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+.upa-title i { color: var(--primary); font-size: 11px; }
+
+.user-picker-add-form .upa-name,
+.user-picker-add-form .upa-dept {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: var(--radius-sm);
+    background: #fff;
+    color: var(--text-main);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+}
+.user-picker-add-form .upa-name:focus,
+.user-picker-add-form .upa-dept:focus { border-color: var(--primary); }
+
+.upa-actions { display: flex; gap: 7px; }
+
+.upa-cancel,
+.upa-save {
+    flex: 1;
+    min-height: 40px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: var(--t);
+}
+.upa-cancel { background: #e2e8f0; color: var(--text-muted); }
+.upa-cancel:hover { background: #cbd5e1; }
+.upa-save   { background: var(--primary); color: #fff; }
+.upa-save:hover { background: var(--primary-dark); }
+
+.upa-hint { font-size: 11px; color: var(--text-muted); line-height: 1.45; }
+
 /* 리스트 뷰 행: 장비명 셀 안의 카테고리 칩 (모바일에서만 노출) */
 .name-cell-text  { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .row-cat-chip    { display: none; }
