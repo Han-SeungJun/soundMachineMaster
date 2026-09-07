@@ -24,11 +24,13 @@ const { window } = dom;
 window.fetch = () => Promise.reject(new Error('offline'));
 window.Chart = function () { return { destroy() {} }; };
 window.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {} });
+window.HTMLCanvasElement.prototype.getContext = () => ({});
 
 // index.html과 동일한 순서로 실제 앱 스크립트 주입
 const files = ['src/js/config.js', 'src/js/state.js', 'src/js/utils.js', 'src/js/api.js',
     'src/js/modules/toast.js', 'src/js/modules/inventory.js', 'src/js/modules/dashboard.js',
-    'src/js/modules/notes.js', 'src/js/modules/modal.js', 'src/js/modules/sets.js',
+    'src/js/modules/notes.js', 'src/js/modules/users.js', 'src/js/modules/modal.js',
+    'src/js/modules/sets.js', 'src/js/modules/set-custom.js',
     'src/js/modules/stats.js', 'src/js/modules/sheet.js', 'src/js/modules/history-calendar.js',
     'src/js/modules/navigation.js', 'src/js/app.js'];
 // 브라우저의 <script> 태그처럼 하나의 전역 렉시컬 스코프에서 실행해야
@@ -36,9 +38,15 @@ const files = ['src/js/config.js', 'src/js/state.js', 'src/js/utils.js', 'src/js
 const NL = String.fromCharCode(10);
 const bundle = files.map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')).join(NL + ';' + NL)
     + NL + ';window.__consts = { DEPARTMENTS, LOCATIONS, USER_PICKER_SEARCH_MIN };'
-    + NL + 'window.__set = function (k, v) { window.__tmp = v; eval(k + " = window.__tmp"); };';
+    + NL + 'window.__set = function (k, v) { window.__tmp = v; eval(k + " = window.__tmp"); };'
+    + NL + 'window.__get = function (k) { return eval(k); };';
 try { window.eval(bundle); }
 catch (e) { console.log('  LOAD ERROR: ' + e.message); fail++; }
+
+// jsdom은 파싱 시점에 DOMContentLoaded를 이미 흘려보내므로, 번들을 eval한 뒤
+// 직접 한 번 발생시켜야 app.js의 문서 레벨 리스너(바깥 클릭으로 선택기 닫기)가 붙는다.
+// 이게 없으면 [1b]의 회귀 테스트가 아무것도 검증하지 못한다(변이 테스트로 확인).
+dom.window.document.dispatchEvent(new window.Event('DOMContentLoaded', { bubbles: true }));
 
 const d = window.document;
 const $ = s => d.querySelector(s);
@@ -60,6 +68,21 @@ ok('탭하면 패널 열림', !$('#rentUserPicker .user-picker-panel').hasAttrib
 const opts = [...d.querySelectorAll('#rentUserPicker .user-picker-opt')].map(b => b.dataset.user);
 ok('사용자 3명 모두 노출 (타이핑 없이)', JSON.stringify(opts) === JSON.stringify(['김하은', '한승준', '홍길동']), JSON.stringify(opts));
 ok('사용자 8명 미만이면 검색창 숨김', !$('#rentUserPicker .user-picker-search'));
+
+console.log('');
+console.log('[1b] 실제 클릭으로 열기 — 회귀 방지');
+// 재렌더로 e.target이 DOM에서 떨어져 나가면 document의 "바깥 클릭" 판정이 참이 되어
+// 방금 연 패널이 즉시 닫혔다(사용자 선택 자체가 불가능). 진짜 클릭 경로로 검증한다.
+const clickIt = el => el.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }));
+window.closeAllUserPickers();
+clickIt($('#rentUserPicker .user-picker-btn'));
+ok('버튼을 실제로 클릭하면 패널이 열린 채 유지', d.getElementById('rentUserPicker').classList.contains('open'));
+ok('열린 패널에 사용자 옵션 노출', d.querySelectorAll('#rentUserPicker .user-picker-opt').length === 3,
+    String(d.querySelectorAll('#rentUserPicker .user-picker-opt').length));
+clickIt(d.querySelector('#rentUserPicker .user-picker-opt'));
+ok('옵션을 실제로 클릭하면 값이 들어감', $('#rentUser').value === '김하은', $('#rentUser').value);
+$('#rentUser').value = '';
+window.refreshUserPickers();
 
 console.log('\n[2] 선택 -> hidden input + 부서 자동완성');
 const rentDept = $('#rentDepartment');
@@ -86,6 +109,33 @@ window.toggleUserPicker('setRentUserPicker');
 ok('빈 목록이면 안내문 노출', !!$('#setRentUserPicker .user-picker-empty'));
 window.closeAllUserPickers();
 ok('closeAllUserPickers 동작', d.querySelectorAll('.user-picker.open').length === 0);
+
+console.log('');
+console.log('[4b] "+ 추가하기" — 전역 사용자 추가');
+window.__set('usersData', [{ userName: '김민지', department: '본팀 영상팀' }]);
+window.localStorage.removeItem('soundreport.localUsers');
+window.refreshUserPickers();
+window.toggleUserPicker('rentUserPicker');
+ok('패널 하단에 추가하기 버튼 노출', !!$('#rentUserPicker .user-picker-add'));
+window.openUserAddForm('rentUserPicker');
+ok('추가 폼 렌더', !!$('#rentUserPicker .upa-name') && !!$('#rentUserPicker .upa-dept'));
+$('#rentUserPicker .upa-name').value = '한승준';
+$('#rentUserPicker .upa-dept').value = '본팀 음향팀';
+window.submitUserAddForm('rentUserPicker');   // GAS 호출은 offline이라 실패 → 로컬 폴백 경로
+ok('추가 즉시 선택값에 반영', $('#rentUser').value === '한승준', $('#rentUser').value);
+ok('추가한 사용자가 목록에 나타남', window.getUserOptions().some(u => u.userName === '한승준'));
+ok('로컬 캐시에 저장(시트 저장 실패 대비)',
+    JSON.parse(window.localStorage.getItem('soundreport.localUsers') || '[]').some(u => u.userName === '한승준'));
+window.__set('usersData', [{ userName: '김민지', department: '본팀 영상팀' }]);
+ok('시트를 다시 읽어도 로컬 추가분 유지', window.getUserOptions().some(u => u.userName === '한승준'));
+window.localStorage.removeItem('soundreport.localUsers');
+
+console.log('');
+console.log('[4c] GAS addUser 액션');
+const gasUser = fs.readFileSync(path.join(ROOT, 'appsscript.gs'), 'utf8');
+ok('doPost에 addUser 라우팅', gasUser.includes("action === 'addUser'"));
+ok('addUserToSheet 정의', gasUser.includes('function addUserToSheet'));
+ok('같은 이름은 중복 추가하지 않음', gasUser.includes('already: true'));
 
 console.log('\n[5] 세트 매칭 로직 (가용 유닛만, 중복 배정 없음)');
 window.__set('inventoryData', [
@@ -144,6 +194,102 @@ const sheetJs = fs.readFileSync(path.join(ROOT, 'src/js/modules/sheet.js'), 'utf
 ok('세트 저장 시 미등록 장비명 확인', sheetJs.includes('재고에 없는 장비명이 있습니다'));
 const setsJs = fs.readFileSync(path.join(ROOT, 'src/js/modules/sets.js'), 'utf8');
 ok('실패 장비명을 토스트에 표시', setsJs.includes("failedNames.join(', ')"));
+
+console.log('');
+console.log('[5d] 대시보드 세트 대여 카드');
+window.__set('inventoryData', [
+    { id: 1, name: 'C100', category: '영상', status: '가용', location: '방재실', date: '2026.09.01' },
+    { id: 2, name: 'C100', category: '영상', status: '대여중', location: '방재실', date: '2026.09.01' },
+    { id: 3, name: '17-55', category: '영상', status: '가용', location: '방재실', date: '2026.09.01' },
+    { id: 4, name: 'C4', category: '음향', status: '가용', location: '3/4층 본당', date: '2026.09.01' }
+]);
+window.__set('setsData', [{ setId: 'SET1', setName: '영상팀 8번', team: '청년부 영상팀', isActive: true, sortOrder: 1, icon: 'fa-video', color: '' }]);
+window.__set('setItemsData', [
+    { setId: 'SET1', itemName: 'C100', category: '영상', quantity: 2, sortOrder: 1 },
+    { setId: 'SET1', itemName: '17-55', category: '영상', quantity: 1, sortOrder: 2 }
+]);
+window.__set('rentBundlesData', [{ bundleId: 'B1', userName: '김하은', setName: '주일 세트',
+    itemNames: 'C100|17-55', isFavorite: true, useCount: 4, lastUsedAt: 2, createdAt: 1 }]);
+window.renderDashboardSets();
+const dashHtml = $('#dashSetsArea').innerHTML;
+ok('대시보드에 세트 타일 렌더', dashHtml.includes('영상팀 8번') && dashHtml.includes('dash-set-tile'));
+ok('타일에 가용 수량 표시', dashHtml.includes('2/3'), dashHtml.includes('dst-avail') ? 'dst-avail 있음' : '없음');
+ok('커스텀 대여 타일 항상 노출', dashHtml.includes('커스텀 대여') && dashHtml.includes('openCustomSetRent()'));
+ok('다시 대여 칩 노출', dashHtml.includes('주일 세트') && dashHtml.includes('openBundleRent'));
+ok('세트 타일이 해당 세트로 모달을 연다', dashHtml.includes("openSetRentModal('SET1')"));
+
+console.log('');
+console.log('[5e] 커스텀 구성 — 직접 담아 대여');
+window.openSetRentModal();
+ok('모달 기본은 커스텀 접힘', d.getElementById('setCustomArea').hidden === true);
+window.setCustomMode(true);
+ok('커스텀 열면 가용 장비만 노출',
+    d.querySelectorAll('#setCustomList .set-custom-item').length === 3,
+    String(d.querySelectorAll('#setCustomList .set-custom-item').length));
+window.toggleCustomItem(1);
+window.toggleCustomItem(4);
+ok('담은 만큼 대여 버튼 활성화', $('#setRentConfirmBtn').disabled === false);
+ok('담은 수량 표시', $('#setCustomCount').textContent === '2대 담김', $('#setCustomCount').textContent);
+ok('선택 구성에 담은 장비 반영',
+    window.__get('currentSetSelection').matchedIds.join() === '1,4',
+    JSON.stringify(window.__get('currentSetSelection').matchedIds));
+window.toggleCustomItem(1);
+ok('다시 누르면 빠짐', window.__get('currentSetSelection').matchedIds.join() === '4',
+    JSON.stringify(window.__get('currentSetSelection').matchedIds));
+window.toggleCustomItem(4);
+ok('모두 빼면 대여 버튼 비활성화', $('#setRentConfirmBtn').disabled === true);
+
+console.log('');
+console.log('[5f] 세트를 커스텀으로 이어받기');
+window.selectSet('SET1');
+ok('세트 선택 시 커스텀 접힘', d.getElementById('setCustomArea').hidden === true);
+ok('구성 화면에 커스텀 전환 버튼', $('#setCompList').innerHTML.includes('customizeCurrentSet()'));
+window.customizeCurrentSet();
+ok('세트 매칭분이 커스텀 선택으로 이관',
+    window.__get('currentSetSelection').custom === true &&
+    window.__get('currentSetSelection').matchedIds.join() === '1,3',
+    JSON.stringify(window.__get('currentSetSelection').matchedIds));
+ok('커스텀 목록이 열림', d.getElementById('setCustomArea').hidden === false);
+window.closeSetRentModal();
+ok('모달 닫으면 커스텀 초기화', $('#setCustomCount').textContent === '0대 담김', $('#setCustomCount').textContent);
+
+
+console.log('');
+console.log('[5g] 인라인 핸들러 인자 이스케이프');
+// HTML 엔티티로는 못 막는다 — 속성값은 JS로 넘어가기 전에 디코드되므로 &#39;가 다시
+// 따옴표가 되어 onclick의 문자열이 끊긴다. 실제로 실행해서 검증한다.
+ok('작은따옴표는 역슬래시로 이스케이프',
+    window.escapeAttrArg("SET'X") === "SET\\'X", window.escapeAttrArg("SET'X"));
+ok('큰따옴표/꺾쇠는 HTML 이스케이프', window.escapeAttrArg('a"<b') === 'a&quot;&lt;b', window.escapeAttrArg('a"<b'));
+ok('숫자 ID도 문자열로 처리', window.escapeAttrArg(4520260831093000) === '4520260831093000');
+
+window.__set('inventoryData', []);
+window.__set('rentBundlesData', []);
+window.__set('setsData', [{ setId: "SET'X", setName: '따옴표 세트', team: '본팀 영상팀',
+    isActive: true, sortOrder: 1, icon: 'fa-video', color: 'red" onload="alert(1)' }]);
+window.__set('setItemsData', []);
+window.renderDashboardSets();
+const tileEl   = $('#dashSetsArea .dash-set-tile');
+const tileCall = tileEl.getAttribute('onclick');
+let calledWith = null;
+const realOpenSetRent = window.openSetRentModal;
+window.openSetRentModal = id => { calledWith = id; };   // 실행 경로만 확인 (모달은 열지 않음)
+let threw = null;
+try { window.eval(tileCall); } catch (e) { threw = e.message; }
+window.openSetRentModal = realOpenSetRent;
+ok('따옴표가 든 SetID로도 핸들러가 깨지지 않음', threw === null, threw);
+ok('디코드된 인자가 원래 SetID와 같음', calledWith === "SET'X", JSON.stringify(calledWith));
+ok('시트 color 값이 속성을 탈출하지 못함',
+    !tileEl.hasAttribute('onload') && !$('#dashSetsArea').innerHTML.includes('onload='),
+    '속성 탈출 흔적 있음');
+
+// 뒤 섹션이 쓰는 인벤토리 픽스처를 되돌린다 ([5g]에서 비웠음)
+window.__set('inventoryData', [
+    { id: 1, name: 'C100', category: '영상', status: '가용', location: '방재실', date: '2026.09.01' },
+    { id: 2, name: 'C100', category: '영상', status: '대여중', location: '방재실', date: '2026.09.01' },
+    { id: 3, name: '17-55', category: '영상', status: '가용', location: '방재실', date: '2026.09.01' },
+    { id: 4, name: 'C4', category: '음향', status: '가용', location: '3/4층 본당', date: '2026.09.01' }
+]);
 
 console.log('\n[6] 모바일 장비목록 — 카테고리 칩이 장비명 앞');
 window.renderInventory();

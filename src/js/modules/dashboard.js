@@ -4,6 +4,7 @@
  * 대시보드 섹션 렌더링 (최근 장비 테이블 + 차트 + 이슈 배너)
  */
 function initDashboard() {
+    renderDashboardSets();
     _renderRecentTable();
     initCharts();
     _updateIssueBanner();
@@ -108,4 +109,82 @@ function _renderDepartmentChart() {
             plugins: { legend: { display: false } }
         }
     });
+}
+
+// ── 대시보드 세트 대여 (홈에서 바로 세트/커스텀 대여) ─────────────────────────
+
+const DASH_SET_TILE_LIMIT  = 6; // 홈에 노출할 세트 타일 수 (나머지는 "전체 세트"로)
+const DASH_QUICK_CHIP_LIMIT = 4; // 즐겨찾기/최근 묶음 칩 수
+
+/**
+ * 홈 화면의 세트 대여 카드를 렌더링한다.
+ * 세트가 정의되기 전이거나 인벤토리가 아직 안 왔어도 커스텀 대여는 항상 열어 둔다.
+ */
+function renderDashboardSets() {
+    const area = document.getElementById('dashSetsArea');
+    if (!area) return;
+
+    const sets = (typeof setsData !== 'undefined' ? setsData : []).slice(0, DASH_SET_TILE_LIMIT);
+    const hint = sets.length ? '' : `<div class="dash-sets-empty">
+        정의된 세트가 아직 없습니다. 아래 커스텀으로 바로 대여하거나 시트 관리에서 세트를 만들어보세요.
+    </div>`;
+
+    area.innerHTML = _dashQuickChips() + hint + _dashSetTiles(sets);
+}
+
+/** 즐겨찾기·최근 묶음을 칩으로 — 한 번 탭하면 그 구성 그대로 다시 대여. */
+function _dashQuickChips() {
+    if (typeof rentBundlesData === 'undefined' || !rentBundlesData.length) return '';
+
+    const user = (localStorage.getItem('lastRentUser') || '').trim();
+    const mine = user ? rentBundlesData.filter(b => b.userName === user) : rentBundlesData;
+    const list = dedupeBundles(mine.length ? mine : rentBundlesData)
+        .sort((a, b) => (b.isFavorite ? 1 : 0) - (a.isFavorite ? 1 : 0))
+        .slice(0, DASH_QUICK_CHIP_LIMIT);
+    if (!list.length) return '';
+
+    const chips = list.map(b => {
+        const count = (b.itemNames || '').split('|').filter(Boolean).length;
+        const label = b.setName || `${count}종 묶음`;
+        return `<button type="button" class="dash-quick-chip" onclick="openBundleRent('${escapeAttrArg(b.bundleId)}')">
+            <i class="fas ${b.isFavorite ? 'fa-star fav' : 'fa-rotate-left'}"></i>
+            ${escapeHtml(label)} <em>${count}대</em>
+        </button>`;
+    }).join('');
+
+    return `<div class="dash-sets-row-label"><i class="fas fa-bolt"></i> 다시 대여</div>
+            <div class="dash-quick-row">${chips}</div>`;
+}
+
+/** 세트 타일 + 항상 마지막에 오는 커스텀 타일. */
+function _dashSetTiles(sets) {
+    const tiles = sets.map(set => {
+        const res   = resolveSetUnits(set.setId);
+        const total = res.components.reduce((sum, c) => sum + (c.quantity || 1), 0);
+        const have  = res.matchedIds.length;
+        const short = res.shortages.length > 0;
+        // 색상은 시트 값이라 그대로 속성에 넣지 않는다 (#rrggbb 형태만 허용).
+        const color = /^#[0-9a-fA-F]{3,8}$/.test(set.color || '') ? set.color : '';
+        const style = color ? `background:${color}1a;color:${color};` : '';
+        return `<button type="button" class="dash-set-tile" onclick="openSetRentModal('${escapeAttrArg(set.setId)}')">
+            <span class="dst-icon" style="${style}"><i class="fas ${escapeHtml(set.icon || 'fa-box')}"></i></span>
+            <span class="dst-body">
+                <span class="dst-name">${escapeHtml(set.setName)}</span>
+                <span class="dst-meta">${escapeHtml(set.team || '공용')}</span>
+            </span>
+            <span class="dst-avail ${short ? 'short' : 'ok'}">${have}/${total}</span>
+        </button>`;
+    }).join('');
+
+    const customTile = `<button type="button" class="dash-set-tile custom" onclick="openCustomSetRent()">
+        <span class="dst-icon"><i class="fas fa-sliders"></i></span>
+        <span class="dst-body">
+            <span class="dst-name">커스텀 대여</span>
+            <span class="dst-meta">장비를 직접 담아서</span>
+        </span>
+        <span class="dst-arrow"><i class="fas fa-arrow-right"></i></span>
+    </button>`;
+
+    return `<div class="dash-sets-row-label"><i class="fas fa-boxes-packing"></i> 세트</div>
+            <div class="dash-set-tiles">${tiles}${customTile}</div>`;
 }
