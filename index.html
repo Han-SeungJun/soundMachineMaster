@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="src/css/calendar.css">
     <link rel="stylesheet" href="src/css/toast.css">
     <link rel="stylesheet" href="src/css/sets.css">
+    <link rel="stylesheet" href="src/css/inquiry.css">
     <link rel="stylesheet" href="src/css/responsive.css">
 </head>
 
@@ -45,6 +46,9 @@
                 </a>
                 <a class="nav-item" onclick="showSection('inventory', this)">
                     <i class="fas fa-boxes-stacked"></i><span>장비 목록</span>
+                </a>
+                <a class="nav-item" onclick="showSection('inquiry', this)">
+                    <i class="fas fa-comment-dots"></i><span>문의하기</span>
                 </a>
                 <a class="nav-item link-gear-register" target="_blank">
                     <i class="fas fa-plus-circle"></i><span>장비 등록</span>
@@ -371,6 +375,72 @@
                     <div id="setMgmtList"></div>
                 </div>
             </section>
+
+            <!-- ═══ INQUIRY (문의하기) ═══ -->
+            <section id="inquiry-section" class="content-section" style="display:none;">
+                <div class="section-header">
+                    <h1>문의하기</h1>
+                    <p class="subtitle">장비 고장·대여 문의·개선 요청을 남기면 기록으로 저장되어 담당자에게 전달됩니다.</p>
+                </div>
+
+                <div class="inquiry-layout">
+                    <!-- ── 작성 폼 ── -->
+                    <div class="card inq-form-card">
+                        <div class="inq-form-head">
+                            <div class="inq-form-badge"><i class="fas fa-paper-plane"></i></div>
+                            <div>
+                                <h3>새 문의 남기기</h3>
+                                <p>보낸 문의는 History와 Memo에 함께 쌓입니다.</p>
+                            </div>
+                        </div>
+
+                        <div class="inq-field">
+                            <label class="inq-label">문의 유형</label>
+                            <div class="inq-type-chips" id="inqTypeChips"></div>
+                        </div>
+
+                        <div class="inq-field">
+                            <label class="inq-label">작성자 <span class="inq-req">필수</span></label>
+                            <div class="user-picker" id="inquiryUserPicker"
+                                 data-value-input="inqUser" data-dept-select="inqDepartment"></div>
+                            <input type="hidden" id="inqUser">
+                        </div>
+
+                        <div class="inq-grid">
+                            <div class="inq-field">
+                                <label class="inq-label">소속 부서</label>
+                                <select id="inqDepartment" class="local-select"></select>
+                            </div>
+                            <div class="inq-field">
+                                <label class="inq-label">관련 장비 <span class="inq-opt">선택</span></label>
+                                <select id="inqGear" class="local-select"></select>
+                            </div>
+                        </div>
+
+                        <div class="inq-field">
+                            <label class="inq-label">문의 내용 <span class="inq-req">필수</span></label>
+                            <textarea id="inqMessage" class="local-textarea" maxlength="500"
+                                      placeholder="어떤 상황인지 구체적으로 적어주세요. (예: 2층 아주사성전 무선마이크 2번 소리가 끊김)"></textarea>
+                            <div class="inq-counter"><span id="inqCount">0</span> / 500</div>
+                        </div>
+
+                        <button class="inq-submit-btn" id="inqSubmitBtn" onclick="submitInquiry()">
+                            <i class="fas fa-paper-plane"></i> 문의 보내기
+                        </button>
+                    </div>
+
+                    <!-- ── 받은 문의 ── -->
+                    <div class="card inq-feed-card">
+                        <div class="inq-feed-head">
+                            <h3><i class="fas fa-inbox"></i> 최근 문의</h3>
+                            <button class="inq-refresh-btn" onclick="loadInquiries(true)" title="문의 다시 불러오기">
+                                <i class="fas fa-rotate-right"></i>
+                            </button>
+                        </div>
+                        <div id="inquiryList" class="inq-feed-list"></div>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
@@ -660,6 +730,7 @@
     <script src="src/js/modules/set-custom.js"></script>
     <script src="src/js/modules/stats.js"></script>
     <script src="src/js/modules/sheet.js"></script>
+    <script src="src/js/modules/inquiry.js"></script>
     <script src="src/js/modules/history-calendar.js"></script>
     <script src="src/js/modules/navigation.js"></script>
     <script src="src/js/app.js"></script>

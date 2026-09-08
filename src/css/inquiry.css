@@ -1,0 +1,405 @@
+/* ═══ 문의하기 (Inquiry) ═══
+   작성 폼 + 최근 문의 피드. 데스크톱은 2열, 태블릿 이하는 1열로 접힌다. */
+
+.inquiry-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: 14px;
+    align-items: start;
+}
+
+/* ── 작성 폼 ─────────────────────────────────────────────────────────────── */
+
+.inq-form-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+    border-bottom: 1.5px dashed #e8edf5;
+}
+
+.inq-form-badge {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    color: #fff;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    box-shadow: 0 5px 14px rgba(99, 102, 241, 0.32);
+}
+
+.inq-form-head h3 {
+    font-size: 15.5px;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+    color: var(--text-main);
+}
+
+.inq-form-head p {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.inq-field {
+    margin-bottom: 15px;
+    min-width: 0;
+}
+
+.inq-field:last-of-type {
+    margin-bottom: 18px;
+}
+
+.inq-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.inq-label {
+    display: block;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 7px;
+}
+
+.inq-req,
+.inq-opt {
+    display: inline-block;
+    margin-left: 4px;
+    padding: 1px 5px;
+    border-radius: 5px;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: none;
+    vertical-align: 1px;
+}
+
+.inq-req { background: rgba(239, 68, 68, 0.1);   color: #ef4444; }
+.inq-opt { background: rgba(100, 116, 139, 0.1); color: #94a3b8; }
+
+.inq-field .local-select,
+.inq-field .local-textarea {
+    width: 100%;
+}
+
+.inq-field .local-textarea {
+    min-height: 104px;
+    resize: vertical;
+}
+
+.inq-counter {
+    text-align: right;
+    font-size: 11px;
+    color: #cbd5e1;
+    margin-top: 5px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── 유형 칩 ─────────────────────────────────────────────────────────────── */
+
+.inq-type-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.inq-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1.5px solid #e8edf5;
+    background: #fff;
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #64748b;
+    cursor: pointer;
+    transition: var(--t);
+    min-height: 38px;
+}
+
+.inq-chip i { font-size: 12px; }
+
+.inq-chip:hover {
+    border-color: #cbd5e1;
+    color: var(--text-main);
+    transform: translateY(-1px);
+}
+
+.inq-chip:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* 선택 상태 — 유형별 색상 */
+.inq-chip.on {
+    color: #fff;
+    border-color: transparent;
+}
+
+.inq-chip--danger.on  { background: #ef4444; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+.inq-chip--primary.on { background: #6366f1; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+.inq-chip--warn.on    { background: #f59e0b; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); }
+.inq-chip--accent.on  { background: #10b981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+.inq-chip--muted.on   { background: #64748b; box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3); }
+
+/* ── 전송 버튼 ───────────────────────────────────────────────────────────── */
+
+.inq-submit-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6366f1, #7c3aed);
+    color: #fff;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--t);
+    box-shadow: 0 6px 18px rgba(99, 102, 241, 0.28);
+}
+
+.inq-submit-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 9px 24px rgba(99, 102, 241, 0.36);
+}
+
+.inq-submit-btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 3px 10px rgba(99, 102, 241, 0.28);
+}
+
+.inq-submit-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+    box-shadow: none;
+}
+
+/* ── 최근 문의 피드 ──────────────────────────────────────────────────────── */
+
+.inq-feed-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.inq-feed-head h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    color: var(--text-main);
+}
+
+.inq-feed-head h3 i { color: var(--primary); font-size: 14px; }
+
+.inq-refresh-btn {
+    width: 34px;
+    height: 34px;
+    border: 1.5px solid #e8edf5;
+    border-radius: 9px;
+    background: #fff;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: var(--t);
+    flex-shrink: 0;
+}
+
+.inq-refresh-btn:hover {
+    color: var(--primary);
+    border-color: rgba(99, 102, 241, 0.35);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.inq-feed-list {
+    max-height: 560px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.inq-feed-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 34px 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+/* ── 문의 항목 ───────────────────────────────────────────────────────────── */
+
+.inq-item {
+    display: flex;
+    gap: 11px;
+    padding: 12px 13px;
+    border: 1.5px solid #eef2f8;
+    border-radius: 12px;
+    background: #fcfdff;
+    transition: var(--t);
+}
+
+.inq-item:hover {
+    border-color: #dbe3ef;
+    background: #fff;
+}
+
+/* 방금 보낸 문의 — 시트 반영 전임을 좌측 강조선으로 표시 */
+.inq-item.pending {
+    border-left: 3px solid var(--primary);
+    background: rgba(99, 102, 241, 0.035);
+}
+
+.inq-item-icon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #fff;
+}
+
+.inq-item-icon.inq-chip--danger  { background: #ef4444; }
+.inq-item-icon.inq-chip--primary { background: #6366f1; }
+.inq-item-icon.inq-chip--warn    { background: #f59e0b; }
+.inq-item-icon.inq-chip--accent  { background: #10b981; }
+.inq-item-icon.inq-chip--muted   { background: #64748b; }
+
+.inq-item-body { flex: 1; min-width: 0; }
+
+.inq-item-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+
+.inq-item-type {
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: -0.1px;
+}
+
+.inq-item-type.inq-chip--danger  { background: rgba(239, 68, 68, 0.1);   color: #dc2626; }
+.inq-item-type.inq-chip--primary { background: rgba(99, 102, 241, 0.1);  color: #4f46e5; }
+.inq-item-type.inq-chip--warn    { background: rgba(245, 158, 11, 0.12); color: #b45309; }
+.inq-item-type.inq-chip--accent  { background: rgba(16, 185, 129, 0.12); color: #047857; }
+.inq-item-type.inq-chip--muted   { background: rgba(100, 116, 139, 0.1); color: #475569; }
+
+.inq-item-time {
+    font-size: 11px;
+    color: #b6c1d1;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.inq-item-msg {
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--text-main);
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+.inq-item-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px 8px;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.inq-item-author { font-weight: 700; color: #64748b; }
+.inq-item-author i { font-size: 9px; margin-right: 2px; color: #b6c1d1; }
+
+.inq-item-dept,
+.inq-item-gear {
+    padding: 2px 7px;
+    border-radius: 5px;
+    background: #f1f5f9;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.inq-item-gear i { font-size: 9px; margin-right: 2px; color: #94a3b8; }
+
+/* ── 태블릿 이하: 1열 ────────────────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+    .inquiry-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .inq-feed-list {
+        max-height: none;
+    }
+}
+
+/* ── 모바일 터치 최적화 ──────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .inq-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    /* 유형 칩: 줄바꿈 대신 가로 스크롤로 한 줄 유지 */
+    .inq-type-chips {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 3px;
+        scroll-snap-type: x proximity;
+    }
+
+    .inq-type-chips::-webkit-scrollbar { display: none; }
+
+    .inq-chip {
+        flex-shrink: 0;
+        min-height: 42px;
+        font-size: 13px;
+        scroll-snap-align: start;
+    }
+
+    /* iOS 자동 확대 방지 */
+    .inq-field .local-textarea,
+    .inq-field .local-select { font-size: 16px; }
+
+    .inq-field .local-textarea { min-height: 116px; }
+
+    .inq-submit-btn { min-height: 52px; font-size: 15px; }
+
+    .inq-refresh-btn { width: 40px; height: 40px; font-size: 14px; }
+
+    .inq-item { padding: 12px; }
+}
