@@ -31,7 +31,8 @@ const files = ['src/js/config.js', 'src/js/state.js', 'src/js/utils.js', 'src/js
     'src/js/modules/toast.js', 'src/js/modules/inventory.js', 'src/js/modules/dashboard.js',
     'src/js/modules/notes.js', 'src/js/modules/users.js', 'src/js/modules/modal.js',
     'src/js/modules/sets.js', 'src/js/modules/set-custom.js',
-    'src/js/modules/stats.js', 'src/js/modules/sheet.js', 'src/js/modules/history-calendar.js',
+    'src/js/modules/stats.js', 'src/js/modules/sheet.js', 'src/js/modules/set-mgmt.js',
+    'src/js/modules/history-calendar.js',
     'src/js/modules/inquiry.js',
     'src/js/modules/navigation.js', 'src/js/app.js'];
 // 브라우저의 <script> 태그처럼 하나의 전역 렉시컬 스코프에서 실행해야
@@ -192,8 +193,8 @@ ok('실패 장비명을 응답에 포함', gas.includes('failedNames: failedName
 ok('묶음 동일성 판정 함수 존재', gas.includes('function bundleSignature_'));
 ok('동일 구성 재대여 시 UseCount 증가', gas.includes('prev) + 1'));
 ok('IsFavorite는 갱신 대상에서 제외', gas.includes("['Purpose', 'Department', 'UsageDate']"));
-const sheetJs = fs.readFileSync(path.join(ROOT, 'src/js/modules/sheet.js'), 'utf8');
-ok('세트 저장 시 미등록 장비명 확인', sheetJs.includes('재고에 없는 장비명이 있습니다'));
+const setMgmtJs = fs.readFileSync(path.join(ROOT, 'src/js/modules/set-mgmt.js'), 'utf8');
+ok('세트 저장 시 미등록 장비명 확인', setMgmtJs.includes('재고에 없는 장비명이 있습니다'));
 const setsJs = fs.readFileSync(path.join(ROOT, 'src/js/modules/sets.js'), 'utf8');
 ok('실패 장비명을 토스트에 표시', setsJs.includes("failedNames.join(', ')"));
 
@@ -444,5 +445,102 @@ ok('태블릿 이하 1열', /@media \(max-width: 1024px\)[\s\S]*grid-template-co
 ok('모바일 iOS 확대 방지 16px', /font-size:\s*16px/.test(inqMobile));
 ok('모바일 전송 버튼 터치 타깃 48px 이상', /\.inq-submit-btn\s*\{[^}]*min-height:\s*5\dpx/.test(inqMobile));
 
-console.log('\n' + '='.repeat(46) + '\n  PASS ' + pass + ' / FAIL ' + fail + '\n' + '='.repeat(46));
-process.exit(fail ? 1 : 0);
+console.log('');
+console.log('[10] 세트 관리 메뉴 - 관리자 모드 게이트');
+// 세트 CRUD는 '시트 관리'에서 분리된 독립 메뉴로 옮겼다. 잠금 상태도 시트 관리와 별개다.
+const REAL_HASH = window.__get('SHEET_ADMIN_HASH');
+window.__set('hashPassword', async pw => (pw === 'right' ? REAL_HASH : 'wrong-hash'));
+window.__set('setsData', [
+    { setId: 'SETDEL', setName: '삭제용 세트', team: '본팀 음향팀', isActive: true, sortOrder: 1, icon: 'fa-box', color: '' }
+]);
+window.__set('setItemsData', [
+    { setId: 'SETDEL', itemName: 'C4', category: '음향', quantity: 1, sortOrder: 1 }
+]);
+
+const setNav = window.findNavItem('setmgmt');
+ok('세트 관리 탭 존재', !!setNav && setNav.textContent.includes('세트 관리'));
+const navTexts = [...d.querySelectorAll('.nav-item')].map(a => a.textContent.trim());
+ok('시트 관리 바로 아래에 배치',
+    navTexts.indexOf('세트 관리') === navTexts.indexOf('시트 관리') + 1, JSON.stringify(navTexts));
+ok('세트 관리 섹션 존재', !!d.getElementById('setmgmt-section'));
+ok('세트 목록이 시트 관리 섹션에서 빠짐',
+    !d.getElementById('sheet-section').contains(d.getElementById('setMgmtList')));
+
+window.__set('setAdminUnlocked', false);
+window.showSection('setmgmt');
+ok('탭 이동 시 세트 관리 섹션 표시', d.getElementById('setmgmt-section').style.display === 'block');
+
+const lockedHtml = d.getElementById('setMgmtList').innerHTML;
+ok('잠금 상태에서 세트 이름은 보임', lockedHtml.includes('삭제용 세트'));
+ok('잠금 상태에서 수정 버튼 숨김', !lockedHtml.includes('openSetFormModal('));
+ok('잠금 상태에서 삭제 버튼 숨김', !lockedHtml.includes('deleteSetMgmt('));
+ok('잠금 상태에서 새 세트 버튼 숨김', d.getElementById('setMgmtAddBtn').style.display === 'none');
+ok('잠금 안내 노출', d.getElementById('setMgmtLockHint').hidden === false);
+
+// 잠금 해제는 이 화면 안에서만 — 시트 관리 잠금과 서로 영향을 주지 않는다.
+window.__set('sheetAdminUnlocked', false);
+window.__set('setAdminUnlocked', true);
+window.renderSetMgmt();
+window.syncSetAdminBtn();
+const unlockedHtml = d.getElementById('setMgmtList').innerHTML;
+ok('관리자 모드에서 수정 버튼 노출', unlockedHtml.includes("openSetFormModal('SETDEL')"));
+ok('관리자 모드에서 삭제 버튼 노출', unlockedHtml.includes("deleteSetMgmt('SETDEL')"));
+ok('관리자 모드에서 새 세트 버튼 노출', d.getElementById('setMgmtAddBtn').style.display === 'inline-flex');
+ok('삭제 버튼에 비밀번호 안내', unlockedHtml.includes('관리자 비밀번호 필요'));
+ok('버튼 라벨이 해제 상태 반영', d.getElementById('setAdminBtn').classList.contains('unlocked'));
+ok('세트 관리 잠금 해제가 시트 관리에 번지지 않음', window.__get('sheetAdminUnlocked') === false);
+window.renderSheetTable();
+ok('시트 관리 표는 여전히 잠김', !d.getElementById('sheetTableHead').innerHTML.includes('삭제'));
+
+console.log('');
+console.log('[10a] 세트 삭제 - 관리자 비밀번호 게이트');
+// 되돌릴 수 없는 작업이라 관리자 모드여도 매번 비밀번호를 다시 받는다.
+
+// confirm/prompt/fetch를 스텁해 서버 호출 없이 게이트 분기만 확인한다.
+const posted = [];
+const realFetch = window.fetch;
+window.fetch = (url, opt) => {
+    posted.push(JSON.parse(opt.body));
+    return Promise.resolve({ ok: true, json: () => Promise.resolve({ success: true, deleted: 2 }) });
+};
+window.__set('loadSets', async () => {});   // 삭제 후 재로딩은 오프라인이므로 건너뜀
+window.confirm = () => true;
+
+(async () => {
+    window.prompt = () => null;             // 비밀번호 입력 취소
+    await window.deleteSetMgmt('SETDEL');
+    ok('비밀번호를 취소하면 삭제 요청 없음', posted.length === 0, JSON.stringify(posted));
+
+    window.prompt = () => 'wrong';          // 비밀번호 오입력
+    await window.deleteSetMgmt('SETDEL');
+    ok('비밀번호가 틀리면 삭제 요청 없음', posted.length === 0, JSON.stringify(posted));
+
+    window.confirm = () => false;           // 확인 창에서 취소
+    window.prompt = () => 'right';
+    await window.deleteSetMgmt('SETDEL');
+    ok('확인 창에서 취소하면 삭제 요청 없음', posted.length === 0, JSON.stringify(posted));
+
+    window.confirm = () => true;            // 정상 경로
+    await window.deleteSetMgmt('SETDEL');
+    ok('비밀번호가 맞으면 deleteSet 1회 요청', posted.length === 1, JSON.stringify(posted));
+    window.__set('setAdminUnlocked', false);
+    await window.deleteSetMgmt('SETDEL');
+    ok('관리자 모드가 아니면 삭제 요청 없음', posted.length === 1, JSON.stringify(posted));
+    window.__set('setAdminUnlocked', true);
+    ok('요청에 setId 포함', posted[0] && posted[0].action === 'deleteSet' && posted[0].setId === 'SETDEL');
+    ok('요청에 관리자 해시 동봉(서버 검증용)', posted[0] && posted[0].adminHash === REAL_HASH);
+    window.fetch = realFetch;
+
+    console.log('');
+    console.log('[10b] 세트 삭제 - GAS 서버측 검증');
+    const gasSrc = fs.readFileSync(path.join(ROOT, 'appsscript.gs'), 'utf8');
+    const delFnStart = gasSrc.indexOf('function deleteSetFromSheet');
+    const delFn = gasSrc.slice(delFnStart, gasSrc.indexOf('function deleteSetRows_', delFnStart));
+    ok('deleteSet이 관리자 게이트를 통과해야 실행', delFn.includes('isAdminRequest_(params)'));
+    ok('인증 실패 시 success:false 반환', delFn.includes('관리자 인증 실패'));
+    ok('없는 세트를 성공으로 처리하지 않음', delFn.includes('해당 세트를 찾을 수 없습니다'));
+    ok('해시는 스크립트 속성으로 교체 가능', gasSrc.includes("getProperty('ADMIN_PW_HASH')"));
+
+    console.log('\n' + '='.repeat(46) + '\n  PASS ' + pass + ' / FAIL ' + fail + '\n' + '='.repeat(46));
+    process.exit(fail ? 1 : 0);
+})();

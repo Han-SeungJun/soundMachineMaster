@@ -2,7 +2,7 @@
 
 /**
  * 콘텐츠 섹션 전환 및 네비게이션 활성 상태 업데이트
- * @param {'dashboard'|'inventory'|'inquiry'|'stats'|'sheet'|'history'} id - 표시할 섹션 ID
+ * @param {'dashboard'|'inventory'|'inquiry'|'stats'|'sheet'|'setmgmt'|'history'} id - 표시할 섹션 ID
  * @param {Element|null} el - 클릭된 nav-item 요소 (활성화 처리). 생략 시 id로 찾는다.
  */
 function showSection(id, el) {
@@ -28,6 +28,7 @@ function showSection(id, el) {
     else if (id === 'inquiry')   initInquirySection();
     else if (id === 'stats')     initStats();
     else if (id === 'sheet')     initSheetSection();
+    else if (id === 'setmgmt')   initSetMgmtSection();
     else if (id === 'history')   initHistorySection();
     else                         initDashboard();
 }

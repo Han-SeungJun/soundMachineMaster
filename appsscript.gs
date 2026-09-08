@@ -812,6 +812,30 @@ function recordRentBundle_(common, bundle, itemNames) {
   });
 }
 
+// ─── 관리자 게이트 ───────────────────────────────────────────────────────────
+
+// 관리자 비밀번호의 SHA-256 해시(프론트 config.js의 SHEET_ADMIN_HASH와 동일한 값).
+// 스크립트 속성 ADMIN_PW_HASH가 설정되어 있으면 그 값이 우선합니다.
+// 주의: 해시는 프론트에 공개되어 있으므로 이 게이트는 '실수/우발적 삭제 방지'용이며
+// 강한 인증이 아닙니다. 강화하려면 서버에서 챌린지-응답 방식으로 바꿔야 합니다.
+const ADMIN_PW_HASH_DEFAULT = 'daa35e4f1a0e43def76e13a948cbda05be2569901fa0c6d5d6342fb2bdc85028';
+
+function adminPwHash_() {
+  try {
+    const v = PropertiesService.getScriptProperties().getProperty('ADMIN_PW_HASH');
+    if (v) return String(v).trim().toLowerCase();
+  } catch (e) {
+    Logger.log('ADMIN_PW_HASH 조회 실패: ' + e.toString());
+  }
+  return ADMIN_PW_HASH_DEFAULT;
+}
+
+/** 관리자 전용 액션 게이트 — 요청의 adminHash가 일치할 때만 true. */
+function isAdminRequest_(params) {
+  const given = String((params && params.adminHash) || '').trim().toLowerCase();
+  return !!given && given === adminPwHash_();
+}
+
 // ─── 세트 마스터/구성 CRUD (saveSet / updateSet / deleteSet) ──────────────────
 
 /**
@@ -874,10 +898,18 @@ function updateSetInSheet(params) {
   return saveSetToSheet(params);
 }
 
+/**
+ * 세트를 삭제합니다. 관리자 비밀번호 해시가 맞아야만 실행됩니다.
+ * @param {{setId:string, adminHash:string}} params
+ */
 function deleteSetFromSheet(params) {
+  if (!isAdminRequest_(params)) {
+    return { success: false, error: '관리자 인증 실패 — 비밀번호를 다시 확인하세요.' };
+  }
   const setId = params.setId;
   if (!setId) return { success: false, error: 'setId 누락' };
   const n = deleteSetRows_(setId);
+  if (!n) return { success: false, error: '해당 세트를 찾을 수 없습니다: ' + setId };
   return { success: true, deleted: n };
 }
 
