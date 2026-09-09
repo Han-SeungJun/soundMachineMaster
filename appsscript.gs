@@ -278,6 +278,9 @@ function doPost(e) {
     } else if (action === 'addUser') {
       return ContentService.createTextOutput(JSON.stringify(addUserToSheet(params)))
         .setMimeType(ContentService.MimeType.JSON);
+    } else if (action === 'addInquiry') {
+      return ContentService.createTextOutput(JSON.stringify(addInquiryToSheet(params.inquiry)))
+        .setMimeType(ContentService.MimeType.JSON);
     }
 
     return ContentService.createTextOutput(JSON.stringify({ error: 'Unknown action' }))
@@ -809,6 +812,30 @@ function recordRentBundle_(common, bundle, itemNames) {
   });
 }
 
+// ─── 관리자 게이트 ───────────────────────────────────────────────────────────
+
+// 관리자 비밀번호의 SHA-256 해시(프론트 config.js의 SHEET_ADMIN_HASH와 동일한 값).
+// 스크립트 속성 ADMIN_PW_HASH가 설정되어 있으면 그 값이 우선합니다.
+// 주의: 해시는 프론트에 공개되어 있으므로 이 게이트는 '실수/우발적 삭제 방지'용이며
+// 강한 인증이 아닙니다. 강화하려면 서버에서 챌린지-응답 방식으로 바꿔야 합니다.
+const ADMIN_PW_HASH_DEFAULT = 'daa35e4f1a0e43def76e13a948cbda05be2569901fa0c6d5d6342fb2bdc85028';
+
+function adminPwHash_() {
+  try {
+    const v = PropertiesService.getScriptProperties().getProperty('ADMIN_PW_HASH');
+    if (v) return String(v).trim().toLowerCase();
+  } catch (e) {
+    Logger.log('ADMIN_PW_HASH 조회 실패: ' + e.toString());
+  }
+  return ADMIN_PW_HASH_DEFAULT;
+}
+
+/** 관리자 전용 액션 게이트 — 요청의 adminHash가 일치할 때만 true. */
+function isAdminRequest_(params) {
+  const given = String((params && params.adminHash) || '').trim().toLowerCase();
+  return !!given && given === adminPwHash_();
+}
+
 // ─── 세트 마스터/구성 CRUD (saveSet / updateSet / deleteSet) ──────────────────
 
 /**
@@ -871,10 +898,18 @@ function updateSetInSheet(params) {
   return saveSetToSheet(params);
 }
 
+/**
+ * 세트를 삭제합니다. 관리자 비밀번호 해시가 맞아야만 실행됩니다.
+ * @param {{setId:string, adminHash:string}} params
+ */
 function deleteSetFromSheet(params) {
+  if (!isAdminRequest_(params)) {
+    return { success: false, error: '관리자 인증 실패 — 비밀번호를 다시 확인하세요.' };
+  }
   const setId = params.setId;
   if (!setId) return { success: false, error: 'setId 누락' };
   const n = deleteSetRows_(setId);
+  if (!n) return { success: false, error: '해당 세트를 찾을 수 없습니다: ' + setId };
   return { success: true, deleted: n };
 }
 
@@ -948,6 +983,70 @@ function addUserToSheet(params) {
   });
 
   return { success: true };
+}
+
+// ─── 문의하기 (addInquiry) ──────────────────────────────────────────────────
+
+const INQUIRY_CATEGORY = '문의';   // History 카테고리(=문의 식별자, 프론트 inquiry.js와 동일)
+const INQUIRY_STATUS   = '접수';   // 처리 상태 기본값 (시트에서 '완료' 등으로 수정 가능)
+const INQUIRY_NO_GEAR  = '문의';   // 관련 장비가 없을 때 장비명 칸에 넣는 값
+
+/**
+ * 문의하기 채널에서 들어온 문의를 Notes(메모)와 History 양쪽에 기록합니다.
+ *
+ * History에는 문의 전용 컬럼이 없으므로 유형은 '사용 목적'에 '[유형] 내용' 형태로
+ * 붙여 저장합니다(프론트 historyRowToInquiry가 같은 규칙으로 분리합니다).
+ * 참조ID를 노트 ID와 같게 두어, 노트를 지우면 History 행도 함께 정리됩니다.
+ *
+ * 장비를 지정한 문의는 해당 장비의 GearID로 Notes에 남아 장비 상세 모달의
+ * '저장된 기록'에도 그대로 보입니다. 단, 장비 상태는 바꾸지 않습니다.
+ *
+ * @param {{id:number, type:string, author:string, department:string, message:string,
+ *          date:string, gearId:(string|number), gearName:string,
+ *          gearCategory:string, gearLocation:string}} inquiry
+ * @returns {{success:boolean, noteId?:number, error?:string}}
+ */
+function addInquiryToSheet(inquiry) {
+  const inq = inquiry || {};
+
+  const author  = String(inq.author  == null ? '' : inq.author).trim();
+  const message = String(inq.message == null ? '' : inq.message).trim();
+  if (!author)  return { success: false, error: '작성자 누락' };
+  if (!message) return { success: false, error: '문의 내용 누락' };
+
+  const type   = String(inq.type == null ? '' : inq.type).trim() || '기타';
+  const noteId = Number(inq.id) || new Date().getTime();
+  const dept   = String(inq.department == null ? '' : inq.department).trim();
+  const gearId = String(inq.gearId == null ? '' : inq.gearId).trim();
+  const body   = '[' + type + '] ' + message;
+
+  // 1) Notes(메모) — 장비를 고른 문의는 그 장비의 기록으로 남는다.
+  const notesSheet = getNotesSheet();
+  const memo = body + ' (' + author + (dept ? ' / ' + dept : '') + ')';
+  notesSheet.appendRow([
+    gearId || 'INQUIRY',
+    noteId,
+    INQUIRY_CATEGORY,
+    memo,
+    inq.date || new Date().toLocaleString('ko-KR')
+  ]);
+
+  // 2) History — 카테고리 '문의'로 남겨 문의 목록에서 되읽는다.
+  const today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  writeHistoryRow(
+    inq.gearName || INQUIRY_NO_GEAR,
+    INQUIRY_CATEGORY,
+    INQUIRY_STATUS,
+    inq.gearLocation || '',
+    author,
+    body,
+    dept,
+    today,
+    '',
+    String(noteId)
+  );
+
+  return { success: true, noteId: noteId };
 }
 
 // ─── 권한 승인 (최초 1회 실행) ───────────────────────────────────────────────

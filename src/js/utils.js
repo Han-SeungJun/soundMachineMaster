@@ -91,3 +91,23 @@ async function hashPassword(pw) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
     return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
+
+/**
+ * 관리자 비밀번호를 물어보고 SHA-256 해시를 돌려준다.
+ * 취소하거나 틀리면 빈 문자열 — 호출부는 이 값이 비면 작업을 중단해야 한다.
+ * 세션 잠금 해제와 별개로, 되돌릴 수 없는 작업은 매번 직접 확인한다.
+ * 해시는 서버(GAS)로도 함께 보내 직접 POST로 우회하는 것을 막는다.
+ * 시트 관리·세트 관리 두 화면이 공유한다.
+ * @param {string} message - prompt 문구
+ * @returns {Promise<string>} 일치하면 해시, 아니면 ''
+ */
+async function promptAdminHash(message) {
+    const pw = prompt(message);
+    if (!pw) return '';
+    const hash = await hashPassword(pw);
+    if (hash !== SHEET_ADMIN_HASH) {
+        showNotification('비밀번호가 일치하지 않습니다.', 'error');
+        return '';
+    }
+    return hash;
+}

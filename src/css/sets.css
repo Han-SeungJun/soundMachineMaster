@@ -282,9 +282,13 @@
 .set-rent-confirm-btn:hover:not(:disabled) { background: var(--primary-dark); }
 .set-rent-confirm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ═══ 세트 관리(CRUD) UI — 시트 관리 섹션 ═══ */
+/* ═══ 세트 관리(CRUD) UI — 세트 관리 섹션 ═══ */
 
-.set-mgmt-card { margin-top: 18px; }
+.set-mgmt-card { margin-top: 0; }
+
+/* 잠금 상태에서만 보이는 안내 — 관리자 모드로 들어가는 길을 알려준다. */
+.set-mgmt-lock-hint { display: flex; align-items: center; gap: 6px; }
+.set-mgmt-lock-hint i { color: var(--text-muted); font-size: 11px; }
 
 .set-mgmt-header {
     display: flex;

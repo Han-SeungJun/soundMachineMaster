@@ -100,6 +100,8 @@ async function fetchDataFromGS() {
             renderInventory();
             updateStats();
             initDashboard();
+            // 문의 화면에 머문 채로 데이터가 도착하면 '관련 장비' 목록이 비어 있게 되므로 다시 채운다.
+            if (typeof initInquiryDropdowns === 'function') initInquiryDropdowns();
             const now = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
             setSyncStatus('synced', `${now} 동기화 완료`);
             showNotification(`데이터 동기화 완료 (${data.length}건)`, 'success');

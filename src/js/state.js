@@ -28,4 +28,5 @@ let usersData        = [];   // Users [{userName, department, role, ...}]
 let rentBundlesData  = [];   // RentBundles [{bundleId, userName, itemNames, isFavorite, lastUsedAt, ...}]
 let currentSetSelection = null; // 선택된 세트 매칭 결과 {setId, matchedIds, shortages}
 let setEditId        = null; // 세트 관리 수정 중인 setId
+let setAdminUnlocked = false; // 세트 관리 화면의 관리자 모드 (시트 관리와 별도)
 let customPickIds    = [];   // 커스텀 구성으로 직접 담은 장비 ID 목록

@@ -31,7 +31,9 @@ const files = ['src/js/config.js', 'src/js/state.js', 'src/js/utils.js', 'src/js
     'src/js/modules/toast.js', 'src/js/modules/inventory.js', 'src/js/modules/dashboard.js',
     'src/js/modules/notes.js', 'src/js/modules/users.js', 'src/js/modules/modal.js',
     'src/js/modules/sets.js', 'src/js/modules/set-custom.js',
-    'src/js/modules/stats.js', 'src/js/modules/sheet.js', 'src/js/modules/history-calendar.js',
+    'src/js/modules/stats.js', 'src/js/modules/sheet.js', 'src/js/modules/set-mgmt.js',
+    'src/js/modules/history-calendar.js',
+    'src/js/modules/inquiry.js',
     'src/js/modules/navigation.js', 'src/js/app.js'];
 // 브라우저의 <script> 태그처럼 하나의 전역 렉시컬 스코프에서 실행해야
 // 파일 간 const 참조(DEPARTMENTS 등)가 실제와 동일하게 동작한다.
@@ -58,7 +60,8 @@ window.__set('usersData', [
     { userName: '홍길동', department: '' }
 ]);
 window.refreshUserPickers();
-ok('picker 2개 렌더됨', d.querySelectorAll('.user-picker-btn').length === 2,
+// 대여 · 세트 대여 · 문의하기 — 세 화면이 같은 선택기를 공유한다.
+ok('picker 3개 렌더됨', d.querySelectorAll('.user-picker-btn').length === 3,
     String(d.querySelectorAll('.user-picker-btn').length));
 ok('초기 라벨은 "사용자 선택"', $('#rentUserPicker .user-picker-value').textContent.trim() === '사용자 선택');
 ok('패널은 기본 닫힘', $('#rentUserPicker .user-picker-panel').hasAttribute('hidden'));
@@ -190,8 +193,8 @@ ok('실패 장비명을 응답에 포함', gas.includes('failedNames: failedName
 ok('묶음 동일성 판정 함수 존재', gas.includes('function bundleSignature_'));
 ok('동일 구성 재대여 시 UseCount 증가', gas.includes('prev) + 1'));
 ok('IsFavorite는 갱신 대상에서 제외', gas.includes("['Purpose', 'Department', 'UsageDate']"));
-const sheetJs = fs.readFileSync(path.join(ROOT, 'src/js/modules/sheet.js'), 'utf8');
-ok('세트 저장 시 미등록 장비명 확인', sheetJs.includes('재고에 없는 장비명이 있습니다'));
+const setMgmtJs = fs.readFileSync(path.join(ROOT, 'src/js/modules/set-mgmt.js'), 'utf8');
+ok('세트 저장 시 미등록 장비명 확인', setMgmtJs.includes('재고에 없는 장비명이 있습니다'));
 const setsJs = fs.readFileSync(path.join(ROOT, 'src/js/modules/sets.js'), 'utf8');
 ok('실패 장비명을 토스트에 표시', setsJs.includes("failedNames.join(', ')"));
 
@@ -309,5 +312,235 @@ ok('모바일에서 칩 노출', /\.row-cat-chip\s*\{[^}]*display:\s*inline-bloc
 ok('미정의 CSS 변수 없음', !/var\(--border\)|var\(--bg-input/.test(comp));
 ok('iOS 확대 방지 16px 검색창', /\.user-picker-search\s*\{[^}]*font-size:\s*16px/.test(resp));
 
-console.log('\n' + '='.repeat(46) + '\n  PASS ' + pass + ' / FAIL ' + fail + '\n' + '='.repeat(46));
-process.exit(fail ? 1 : 0);
+console.log('\n[8] 모바일 상단 탭 네비게이션');
+// 하단 고정 탭바는 모바일 브라우저 UI에 가려 잘 보이지 않았다.
+// 상단 sticky 탭 스트립으로 옮겼는지 CSS/JS 양쪽에서 확인한다.
+const mobileBlock = resp.slice(resp.indexOf('@media (max-width: 768px)'), resp.indexOf('@media (max-width: 375px)'));
+const navMenuRule = (mobileBlock.match(/\.nav-menu\s*\{[^}]*\}/) || [''])[0];
+const sidebarRule = (mobileBlock.match(/\.sidebar\s*\{[^}]*\}/) || [''])[0];
+ok('탭 스트립이 더 이상 하단 고정이 아님', !/position:\s*fixed/.test(navMenuRule) && !/bottom:\s*0/.test(navMenuRule), navMenuRule);
+ok('사이드바가 상단 sticky', /position:\s*sticky/.test(sidebarRule) && /top:\s*0/.test(sidebarRule));
+ok('탭 스트립 가로 스크롤', /overflow-x:\s*auto/.test(navMenuRule));
+ok('하단 탭바용 본문 여백 제거', !/padding-bottom:\s*72px/.test(mobileBlock));
+ok('노치 대응 safe-area 패딩', /env\(safe-area-inset-top/.test(sidebarRule));
+ok('탭 터치 타깃 38px 이상', /min-height:\s*(3[89]|[4-9]\d)px/.test((mobileBlock.match(/\.nav-item\s*\{[^}]*\}/) || [''])[0]));
+
+const inqNav = window.findNavItem('inquiry');
+ok('문의하기 탭 존재', !!inqNav && inqNav.textContent.includes('문의하기'));
+ok('요소를 넘기지 않아도 탭을 id로 찾음', window.findNavItem('history') !== null);
+window.showSection('inquiry');
+ok('showSection(id)만으로 활성 탭 갱신', inqNav.classList.contains('active'));
+ok('활성 탭은 하나뿐', d.querySelectorAll('.nav-item.active').length === 1,
+    String(d.querySelectorAll('.nav-item.active').length));
+ok('문의 섹션 표시', d.getElementById('inquiry-section').style.display === 'block');
+window.showSection('dashboard');
+ok('다른 탭으로 이동하면 문의 섹션 숨김', d.getElementById('inquiry-section').style.display === 'none');
+// app.js가 인덱스로 참조하는 장비 목록 탭 위치가 유지되어야 한다.
+ok('nav-item[1]은 여전히 장비 목록', d.querySelectorAll('.nav-item')[1].textContent.includes('장비 목록'));
+
+console.log('\n[9] 문의하기 — 작성 폼');
+window.renderInquiryTypeChips();
+const chips = [...d.querySelectorAll('#inqTypeChips .inq-chip')].map(b => b.dataset.type);
+ok('문의 유형 칩 렌더', chips.length === 5 && chips[0] === '장비 고장', JSON.stringify(chips));
+ok('첫 유형이 기본 선택', $('#inqTypeChips .inq-chip.on').dataset.type === '장비 고장');
+clickIt(d.querySelectorAll('#inqTypeChips .inq-chip')[3]);
+ok('칩을 클릭하면 선택 이동', $('#inqTypeChips .inq-chip.on').dataset.type === '개선 요청',
+    $('#inqTypeChips .inq-chip.on').dataset.type);
+ok('선택 상태가 접근성 속성에도 반영', $('#inqTypeChips .inq-chip.on').getAttribute('aria-pressed') === 'true');
+
+window.initInquiryDropdowns();
+ok('부서 select 채움', $('#inqDepartment').options.length === window.__consts.DEPARTMENTS.length + 1,
+    String($('#inqDepartment').options.length));
+ok('관련 장비 select 채움 (미지정 옵션 포함)', $('#inqGear').options.length === 5,
+    String($('#inqGear').options.length));
+ok('장비 미지정이 기본값', $('#inqGear').value === '');
+
+const inqSample = '2층 아주사성전 무선마이크 소리가 끊깁니다';
+$('#inqMessage').value = inqSample;
+window.bindInquiryCounter();
+ok('글자수 카운터 동기화', $('#inqCount').textContent === String(inqSample.length),
+    $('#inqCount').textContent);
+
+console.log('');
+console.log('[9b] 전송 검증 — 작성자/내용 필수');
+let toastMsg = '';
+const realToast = window.showNotification;
+window.showNotification = m => { toastMsg = m; };
+$('#inqUser').value = '';
+window.submitInquiry();
+ok('작성자 없으면 전송 차단', toastMsg.includes('작성자'), toastMsg);
+ok('차단 시 사용자 선택기를 열어줌', d.getElementById('inquiryUserPicker').classList.contains('open'));
+window.closeAllUserPickers();
+$('#inqUser').value = '김하은';
+$('#inqMessage').value = '   ';
+toastMsg = '';
+window.submitInquiry();
+ok('내용 없으면 전송 차단', toastMsg.includes('문의 내용'), toastMsg);
+window.showNotification = realToast;
+
+console.log('');
+console.log('[9c] History 행 <-> 문의 항목 변환');
+// 유형은 '사용 목적' 앞에 '[유형] '으로 붙여 저장한다 (GAS addInquiryToSheet와 짝).
+const parsedInq = window.historyRowToInquiry({
+    name: '무선마이크 2번', category: '문의', status: '접수', location: '2층 아주사성전',
+    user: '김하은', purpose: '[장비 고장] 소리가 끊깁니다', department: '본팀 음향팀',
+    actionDate: new Date()
+});
+ok('유형 분리', parsedInq.type === '장비 고장', parsedInq.type);
+ok('내용에서 유형 접두어 제거', parsedInq.message === '소리가 끊깁니다', parsedInq.message);
+ok('관련 장비명 유지', parsedInq.gearName === '무선마이크 2번', parsedInq.gearName);
+
+const generalInq = window.historyRowToInquiry({
+    name: '문의', category: '문의', status: '접수', location: '',
+    user: '한승준', purpose: '[개선 요청] 대여 알림이 있으면 좋겠어요', department: '',
+    actionDate: new Date()
+});
+ok('장비 미지정 문의는 장비명 비움', generalInq.gearName === '', generalInq.gearName);
+ok('접두어 없는 옛 행도 깨지지 않음',
+    window.historyRowToInquiry({ name: '문의', purpose: '그냥 내용', actionDate: new Date() }).message === '그냥 내용');
+
+window.__set('inquiryData', [parsedInq, generalInq]);
+window.renderInquiryList();
+const feedHtml = $('#inquiryList').innerHTML;
+ok('문의 목록 렌더', d.querySelectorAll('#inquiryList .inq-item').length === 2,
+    String(d.querySelectorAll('#inquiryList .inq-item').length));
+ok('유형 배지 노출', feedHtml.includes('장비 고장') && feedHtml.includes('개선 요청'));
+ok('작성자 노출', feedHtml.includes('김하은') && feedHtml.includes('한승준'));
+ok('관련 장비만 장비 칩 표시', (feedHtml.match(/inq-item-gear/g) || []).length === 1);
+window.__set('inquiryData', []);
+window.renderInquiryList();
+ok('문의가 없으면 빈 상태 안내', $('#inquiryList').innerHTML.includes('아직 접수된 문의가 없습니다'));
+
+console.log('');
+console.log('[9d] 문의 내용 이스케이프');
+window.__set('inquiryData', [{
+    type: '기타', author: '<img src=x onerror=alert(1)>', department: '', message: '<script>alert(1)<\/script>',
+    gearName: '', status: '접수', actionDate: new Date(), pending: false
+}]);
+window.renderInquiryList();
+ok('문의 내용/작성자가 마크업으로 실행되지 않음',
+    !$('#inquiryList').querySelector('img') && !$('#inquiryList').querySelector('script'));
+window.__set('inquiryData', []);
+
+console.log('');
+console.log('[9e] GAS addInquiry 액션');
+const gasInq = fs.readFileSync(path.join(ROOT, 'appsscript.gs'), 'utf8');
+const inqFn  = gasInq.slice(gasInq.indexOf('function addInquiryToSheet'), gasInq.indexOf('function authorizeDriveAccess'));
+ok('doPost에 addInquiry 라우팅', gasInq.includes("action === 'addInquiry'"));
+ok('addInquiryToSheet 정의', inqFn.length > 0);
+ok('Notes(메모)에 기록', inqFn.includes('getNotesSheet()'));
+ok('History에도 기록', inqFn.includes('writeHistoryRow('));
+ok('참조ID를 노트 ID와 맞춰 삭제 연동', inqFn.includes('String(noteId)'));
+ok('작성자/내용 누락은 서버에서도 거부',
+    inqFn.includes("error: '작성자 누락'") && inqFn.includes("error: '문의 내용 누락'"));
+ok('문의는 장비 상태를 바꾸지 않음', !inqFn.includes('syncStatusToMainSheet'));
+
+console.log('');
+console.log('[9f] 문의 화면 CSS');
+const inqCss = fs.readFileSync(path.join(ROOT, 'src/css/inquiry.css'), 'utf8');
+const inqMobile = inqCss.slice(inqCss.indexOf('@media (max-width: 768px)'));
+ok('index.html이 inquiry.css를 로드',
+    fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8').includes('src/css/inquiry.css'));
+ok('태블릿 이하 1열', /@media \(max-width: 1024px\)[\s\S]*grid-template-columns:\s*1fr/.test(inqCss));
+ok('모바일 iOS 확대 방지 16px', /font-size:\s*16px/.test(inqMobile));
+ok('모바일 전송 버튼 터치 타깃 48px 이상', /\.inq-submit-btn\s*\{[^}]*min-height:\s*5\dpx/.test(inqMobile));
+
+console.log('');
+console.log('[10] 세트 관리 메뉴 - 관리자 모드 게이트');
+// 세트 CRUD는 '시트 관리'에서 분리된 독립 메뉴로 옮겼다. 잠금 상태도 시트 관리와 별개다.
+const REAL_HASH = window.__get('SHEET_ADMIN_HASH');
+window.__set('hashPassword', async pw => (pw === 'right' ? REAL_HASH : 'wrong-hash'));
+window.__set('setsData', [
+    { setId: 'SETDEL', setName: '삭제용 세트', team: '본팀 음향팀', isActive: true, sortOrder: 1, icon: 'fa-box', color: '' }
+]);
+window.__set('setItemsData', [
+    { setId: 'SETDEL', itemName: 'C4', category: '음향', quantity: 1, sortOrder: 1 }
+]);
+
+const setNav = window.findNavItem('setmgmt');
+ok('세트 관리 탭 존재', !!setNav && setNav.textContent.includes('세트 관리'));
+const navTexts = [...d.querySelectorAll('.nav-item')].map(a => a.textContent.trim());
+ok('시트 관리 바로 아래에 배치',
+    navTexts.indexOf('세트 관리') === navTexts.indexOf('시트 관리') + 1, JSON.stringify(navTexts));
+ok('세트 관리 섹션 존재', !!d.getElementById('setmgmt-section'));
+ok('세트 목록이 시트 관리 섹션에서 빠짐',
+    !d.getElementById('sheet-section').contains(d.getElementById('setMgmtList')));
+
+window.__set('setAdminUnlocked', false);
+window.showSection('setmgmt');
+ok('탭 이동 시 세트 관리 섹션 표시', d.getElementById('setmgmt-section').style.display === 'block');
+
+const lockedHtml = d.getElementById('setMgmtList').innerHTML;
+ok('잠금 상태에서 세트 이름은 보임', lockedHtml.includes('삭제용 세트'));
+ok('잠금 상태에서 수정 버튼 숨김', !lockedHtml.includes('openSetFormModal('));
+ok('잠금 상태에서 삭제 버튼 숨김', !lockedHtml.includes('deleteSetMgmt('));
+ok('잠금 상태에서 새 세트 버튼 숨김', d.getElementById('setMgmtAddBtn').style.display === 'none');
+ok('잠금 안내 노출', d.getElementById('setMgmtLockHint').hidden === false);
+
+// 잠금 해제는 이 화면 안에서만 — 시트 관리 잠금과 서로 영향을 주지 않는다.
+window.__set('sheetAdminUnlocked', false);
+window.__set('setAdminUnlocked', true);
+window.renderSetMgmt();
+window.syncSetAdminBtn();
+const unlockedHtml = d.getElementById('setMgmtList').innerHTML;
+ok('관리자 모드에서 수정 버튼 노출', unlockedHtml.includes("openSetFormModal('SETDEL')"));
+ok('관리자 모드에서 삭제 버튼 노출', unlockedHtml.includes("deleteSetMgmt('SETDEL')"));
+ok('관리자 모드에서 새 세트 버튼 노출', d.getElementById('setMgmtAddBtn').style.display === 'inline-flex');
+ok('삭제 버튼에 비밀번호 안내', unlockedHtml.includes('관리자 비밀번호 필요'));
+ok('버튼 라벨이 해제 상태 반영', d.getElementById('setAdminBtn').classList.contains('unlocked'));
+ok('세트 관리 잠금 해제가 시트 관리에 번지지 않음', window.__get('sheetAdminUnlocked') === false);
+window.renderSheetTable();
+ok('시트 관리 표는 여전히 잠김', !d.getElementById('sheetTableHead').innerHTML.includes('삭제'));
+
+console.log('');
+console.log('[10a] 세트 삭제 - 관리자 비밀번호 게이트');
+// 되돌릴 수 없는 작업이라 관리자 모드여도 매번 비밀번호를 다시 받는다.
+
+// confirm/prompt/fetch를 스텁해 서버 호출 없이 게이트 분기만 확인한다.
+const posted = [];
+const realFetch = window.fetch;
+window.fetch = (url, opt) => {
+    posted.push(JSON.parse(opt.body));
+    return Promise.resolve({ ok: true, json: () => Promise.resolve({ success: true, deleted: 2 }) });
+};
+window.__set('loadSets', async () => {});   // 삭제 후 재로딩은 오프라인이므로 건너뜀
+window.confirm = () => true;
+
+(async () => {
+    window.prompt = () => null;             // 비밀번호 입력 취소
+    await window.deleteSetMgmt('SETDEL');
+    ok('비밀번호를 취소하면 삭제 요청 없음', posted.length === 0, JSON.stringify(posted));
+
+    window.prompt = () => 'wrong';          // 비밀번호 오입력
+    await window.deleteSetMgmt('SETDEL');
+    ok('비밀번호가 틀리면 삭제 요청 없음', posted.length === 0, JSON.stringify(posted));
+
+    window.confirm = () => false;           // 확인 창에서 취소
+    window.prompt = () => 'right';
+    await window.deleteSetMgmt('SETDEL');
+    ok('확인 창에서 취소하면 삭제 요청 없음', posted.length === 0, JSON.stringify(posted));
+
+    window.confirm = () => true;            // 정상 경로
+    await window.deleteSetMgmt('SETDEL');
+    ok('비밀번호가 맞으면 deleteSet 1회 요청', posted.length === 1, JSON.stringify(posted));
+    window.__set('setAdminUnlocked', false);
+    await window.deleteSetMgmt('SETDEL');
+    ok('관리자 모드가 아니면 삭제 요청 없음', posted.length === 1, JSON.stringify(posted));
+    window.__set('setAdminUnlocked', true);
+    ok('요청에 setId 포함', posted[0] && posted[0].action === 'deleteSet' && posted[0].setId === 'SETDEL');
+    ok('요청에 관리자 해시 동봉(서버 검증용)', posted[0] && posted[0].adminHash === REAL_HASH);
+    window.fetch = realFetch;
+
+    console.log('');
+    console.log('[10b] 세트 삭제 - GAS 서버측 검증');
+    const gasSrc = fs.readFileSync(path.join(ROOT, 'appsscript.gs'), 'utf8');
+    const delFnStart = gasSrc.indexOf('function deleteSetFromSheet');
+    const delFn = gasSrc.slice(delFnStart, gasSrc.indexOf('function deleteSetRows_', delFnStart));
+    ok('deleteSet이 관리자 게이트를 통과해야 실행', delFn.includes('isAdminRequest_(params)'));
+    ok('인증 실패 시 success:false 반환', delFn.includes('관리자 인증 실패'));
+    ok('없는 세트를 성공으로 처리하지 않음', delFn.includes('해당 세트를 찾을 수 없습니다'));
+    ok('해시는 스크립트 속성으로 교체 가능', gasSrc.includes("getProperty('ADMIN_PW_HASH')"));
+
+    console.log('\n' + '='.repeat(46) + '\n  PASS ' + pass + ' / FAIL ' + fail + '\n' + '='.repeat(46));
+    process.exit(fail ? 1 : 0);
+})();
